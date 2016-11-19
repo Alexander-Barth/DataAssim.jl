@@ -1,9 +1,37 @@
 module DataAssim
 using Base.Test
 
-export sangoma_ensemble_analysis
+export ensemble_analysis
 
-function sangoma_ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=[])
+"""
+    Xa,xa = ensemble_analysis(Xf,H,y,R,method,...)
+
+Computes analysis ensemble Xa based on forecast ensemble Xf
+and observations y using various ensemble scheme.
+
+# Input arguments:
+* `Xf`: forecast ensemble (n x N)
+* `y`: observations (m)
+* `H`: operator (m x n) (see also below)
+* `R`: observation error covariance  (m x m).
+* `method`: Method can be the string 'EnSRF', 'EAKF', 'ETKF', 'ETKF2', 'SEIK',
+   'ESTKF' or 'EnKF'.
+   'ETKF': use SVD decomposition of invTTt (see Sangoma D3.1)
+   'ETKF2': use eigendecomposition decomposition of invTTt (see Hunt et al., 2007)
+
+# Optional keywords arguments:
+* `debug`: set to true to enable debugging. Default (false) is no debugging.
+* `tolerance`: expected rounding error (default 1e-10) for debugging checks. This is not used if debug is false.
+* `HXf`: if non empty, then it is the product H Xf. In this case, H is not used (except for EnSRF).
+
+# Output arguments:
+* `Xa`: the analysis ensemble (n x N)
+* `xa`: the analysis ensemble mean (n)
+
+Notations follows:
+Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
+"""
+function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=[])
 
 tol = tolerance
 
