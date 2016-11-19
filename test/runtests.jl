@@ -1,10 +1,6 @@
 using DataAssim
 using Base.Test
 
-# write your own tests here
-
-
-
 # number of elements in the state vector
 n = 10;
 # ensemble size
@@ -39,7 +35,6 @@ xa_check = xf + K*(y - H*xf);
 
 method = ["EnSRF","EAKF","ETKF","ETKF2","SEIK","ESTKF","serialEnSRF"]
 #method = ["EnSRF","serialEnSRF","ETKF","ETKF2","EAKF","SEIK","ESTKF"]
-method = ["EnSRF","EAKF","ETKF","ETKF2","SEIK","ESTKF"]
 
 # Non-serial algorithms (all observations at once) with H
 
