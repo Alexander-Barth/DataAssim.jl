@@ -41,21 +41,24 @@ method = ["EnSRF","EAKF","ETKF","ETKF2","SEIK","ESTKF","serialEnSRF"]
 #method = ["EnSRF","serialEnSRF","ETKF","ETKF2","EAKF","SEIK","ESTKF"]
 method = ["EnSRF","EAKF","ETKF","ETKF2","SEIK","ESTKF"]
 
-print("Non-serial algorithms (all observations at once) with H\n")
+# Non-serial algorithms (all observations at once) with H
 
 for i = 1:length(method)
   Xa,xa = sangoma_ensemble_analysis(Xf,H,y,R,method[i],
                                     debug=debug, tolerance=tol);
   Xap = Xa - repmat(xa,1,N);
 
-  # check results
-  sangoma_check(xa,xa_check,method[i] * "-analysis",tol)
+  # check analysis
 
-  sangoma_check(mean(Xa,2),xa_check,
-                method[i] * "-analysis ensemble mean",tol);
+  @test xa ≈ xa_check
 
-  sangoma_check((Xap * Xap') / (N-1),Pa_check,
-                method[i] * "-analysis ensemble variance",tol)
+  # check analysis ensemble mean
+
+  @test mean(Xa,2) ≈ xa_check
+
+  # check analysis ensemble variance
+
+  @test (Xap * Xap') / (N-1) ≈ Pa_check 
 end
 
 # #
@@ -63,21 +66,24 @@ method = ["EnSRF","EAKF","ETKF","ETKF2","SEIK","ESTKF"]
 #method = ["EnSRF"]
 
 
-print("Non-serial algorithms (all observations at once) with HXf\n")
+# Non-serial algorithms (all observations at once) with HXf
 
 for i = 1:length(method)
   Xa,xa = sangoma_ensemble_analysis(Xf,[],y,R,method[i],
                                     debug=debug, tolerance=tol,HXf=H*Xf)
   Xap = Xa - repmat(xa,1,N)
 
-  # check results
-  sangoma_check(xa,xa_check,method[i] * "-analysis",tol)
+  # check analysis
 
-  sangoma_check(mean(Xa,2),xa_check,
-                method[i] * "-analysis ensemble mean",tol);
+  @test xa ≈ xa_check
 
-  sangoma_check((Xap * Xap') / (N-1),Pa_check,
-                method[i] * "-analysis ensemble variance",tol)
+  # check analysis ensemble mean
+
+  @test mean(Xa,2) ≈ xa_check
+
+  # check analysis ensemble variance
+
+  @test (Xap * Xap') / (N-1) ≈ Pa_check 
 end
 
 

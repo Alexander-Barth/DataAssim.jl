@@ -1,6 +1,7 @@
 module DataAssim
+using Base.Test
 
-export sangoma_ensemble_analysis, sangoma_check
+export sangoma_ensemble_analysis
 
 function sangoma_ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=[])
 
@@ -82,12 +83,14 @@ elseif method == "ETKF"
   TTt = eye(N) - S'*(F\S)
 
   if debug
-    sangoma_check(TTt,U_T * ((eye(Ndim)+Sigma_T*Sigma_T') \ U_T'),
-        "ETKF-TTt",tol)
+      # ETKF-TTt
+      @test TTt ≈ U_T * ((eye(Ndim)+Sigma_T*Sigma_T') \ U_T')
 
-    K2 = 1/sqrt(N-1) * Xfp *
+      "ETKF-Kalman gain"
+      K2 = 1/sqrt(N-1) * Xfp *
         (Stilde' * ((Stilde*Stilde'+ eye(m)) \ inv(sqrtR)))
-    sangoma_check(K,K2,"ETKF-Kalman gain",tol)
+
+      @test K ≈ K2
   end
 
   Xap = Xfp * (U_T * (sqrt(eye(Ndim)+Sigma_T*Sigma_T') \ U_T'))
@@ -107,13 +110,16 @@ elseif method == "ETKF2"
   Sigma_T = diagm(Sigma_T)
 
   if debug
-    sangoma_check(U_T*Sigma_T * U_T',invTTt,"ETKF2-eig",tol)
+      # ETKF2-eig
+      
+    @test U_T*Sigma_T * U_T' ≈ invTTt
   end
 
   T = U_T * (sqrt(Sigma_T) \ U_T')
 
   if debug
-    sangoma_check(T*T,inv(invTTt),"ETKF2-sym. square root",tol)
+      # ETKF2-sym. square root
+      @test T*T ≈ inv(invTTt)
   end
 
   Xap = sqrt(N-1) * Xfp * T
@@ -139,9 +145,9 @@ elseif method == "ETKF2"
 
 #   if debug
 #     Pf2 = 1/(N-1) * L * ((A_T'*A_T) \ L')
-#     sangoma_check(Pf,Pf2',"ETKF3-Pf",tol)
+#     @test Pf,Pf2',"ETKF3-Pf",tol)
 #     Pf2 = 1/(N-1) * L * L'
-#     sangoma_check(Pf,Pf2',"ETKF3-Pf2",tol)
+#     @test Pf,Pf2',"ETKF3-Pf2",tol)
 #   end
 
 #   invTTt = (N-1)*eye(N) + HL' * (R \ HL)
@@ -153,7 +159,7 @@ elseif method == "ETKF2"
 #   #T = sqrtm(inv(invTTt))
 
 #   if debug
-#     sangoma_check(T*T,inv(invTTt),"ETKF3-sym. square root",tol)
+#     @test T*T,inv(invTTt),"ETKF3-sym. square root",tol)
 #   end
 
 #   Xap = sqrt(N-1) * L*T * A_T'
@@ -170,8 +176,8 @@ elseif method == "EAKF"
   Sigma_A = diagm(Sigma_A)
 
   if debug
-    # last singular should be zero
-    sangoma_check(abs(Sigma_A[N,N]),0,"EAKF-sigma",tol)
+      # last singular should be zero
+      @test_approx_eq_eps abs(Sigma_A[N,N]) 0 tol
   end
 
   U_A = U_A[:,1:N-1]
@@ -186,8 +192,8 @@ elseif method == "EAKF"
   sqrtGamma_A = diagm(sqrtGamma_A)
 
   if debug
-    # last eigenvalue should be zero
-    sangoma_check(abs(sqrtGamma_A[end,end]),0,"EAKF-gamma",tol)
+      # last eigenvalue should be zero
+      @test_approx_eq_eps abs(sqrtGamma_A[end,end]) 0 tol
   end
 
   Gamma_A = sqrtGamma_A.^2 / (N-1)
@@ -195,7 +201,8 @@ elseif method == "EAKF"
   Z_A = Z_A[:,1:N-1]
 
   if debug
-    sangoma_check(Z_A * Gamma_A * Z_A',Pf,"EAKF-decomposition",tol)
+      # EAKF-decomposition
+      @test Z_A * Gamma_A * Z_A' ≈ Pf
   end
 
   Xap = 1/sqrt(N-1) * Xfp * (U_A * ((sqrt(eye(N-1) + Sigma_A'*Sigma_A)) \
@@ -215,9 +222,12 @@ elseif method == "SEIK"
   HL = HXf*A
 
   if debug
-    sangoma_check(L,Xfp[:,1:N-1],"SEIK-L matrix",tol)
-    Pf2 = 1/(N-1) * L * ((A'*A) \ L')
-    sangoma_check(Pf,Pf2',"SEIK-Pf",tol)
+      # SEIK-L matrix
+      @test L ≈ Xfp[:,1:N-1]
+      
+      # SEIK-Pf
+      Pf2 = 1/(N-1) * L * ((A'*A) \ L')
+      @test Pf ≈ Pf2
   end
 
   invTTt = (N-1)*(A'*A) + HL' * (R \ HL)
@@ -226,7 +236,8 @@ elseif method == "SEIK"
   T = chol(inv(invTTt))'
 
   if debug
-    sangoma_check(T*T',inv(invTTt),"SEIK-Cholesky decomposition",tol)
+      # SEIK-Cholesky decomposition
+      @test T*T' ≈ inv(invTTt)
   end
 
   # add omega
@@ -255,10 +266,13 @@ elseif method == "ESTKF"
   HL = HXf*A
 
   if debug
+    #  ESTKF-Pf
     Pf2 = 1/(N-1) * L * ((A'*A) \ L')
-    sangoma_check(Pf,Pf2',"ESTKF-Pf",tol)
+    @test Pf ≈ Pf2
+ 
+    # ESTKF-Pf2
     Pf2 = 1/(N-1) * L * L'
-    sangoma_check(Pf,Pf2',"ESTKF-Pf2",tol)
+    @test Pf ≈ Pf2
   end
 
   invTTt = (N-1)*eye(N-1) + HL' * (R \ HL)
@@ -270,7 +284,8 @@ elseif method == "ESTKF"
   #T = sqrtm(inv(invTTt))
 
   if debug
-    sangoma_check(T*T,inv(invTTt),"ESTKF-sym. square root",tol)
+    # ESTKF-sym. square root
+    @test T*T ≈ inv(invTTt)
   end
 
   Xap = sqrt(N-1) * L*T * A'
@@ -323,23 +338,5 @@ return H
 end
 
 
-function sangoma_check(val1,val2,message,tol,expected_failure = false)
-
-rmsd = sqrt(mean((val1 - val2).^2))
-
-@printf("%40s: ",message)
-
-if rmsd < tol
-    @printf("%s (RMS = %g)\n", " OK ", rmsd)
-else
-  if expected_failure
-      @printf("%s (RMS = %g)\n", " expected failure ", rmsd)
-  else
-      @printf("%s (RMS = %g)\n", "FAIL", rmsd)
-      error("sangoma_check failed")
-  end
-end
-
-end
 
 end
