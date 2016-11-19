@@ -6,7 +6,6 @@
 
 [![codecov.io](http://codecov.io/github/Alexander-Barth/DataAssim.jl/coverage.svg?branch=master)](http://codecov.io/github/Alexander-Barth/DataAssim.jl?branch=master)
 
-
 The packages implements various ensemble Kalman Filter data assimilation methods:
 
 * Ensemble Sqare Root Filter (EnSRF)

@@ -8,11 +8,13 @@ N = 3;
 # number of observations
 m = 5;
 
-# if debug is one, then internal checks are activated
-debug = false;
+# if debug is true, then internal checks are activated
 debug = true;
+
+# tolerance for internal checking
 tol = 1e-10;
 
+# some random data
 y = randn(m,1);
 Xf = randn(n,N);
 
@@ -34,7 +36,6 @@ Pa_check = Pf - K*H*Pf;
 xa_check = xf + K*(y - H*xf);
 
 method = ["EnSRF","EAKF","ETKF","ETKF2","SEIK","ESTKF","serialEnSRF"]
-#method = ["EnSRF","serialEnSRF","ETKF","ETKF2","EAKF","SEIK","ESTKF"]
 
 # Non-serial algorithms (all observations at once) with H
 
@@ -56,10 +57,7 @@ for i = 1:length(method)
   @test (Xap * Xap') / (N-1) ≈ Pa_check 
 end
 
-# #
 method = ["EnSRF","EAKF","ETKF","ETKF2","SEIK","ESTKF"]
-#method = ["EnSRF"]
-
 
 # Non-serial algorithms (all observations at once) with HXf
 
