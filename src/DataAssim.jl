@@ -49,22 +49,25 @@ if method == "EnSRF"
 elseif method == "serialEnSRF"
   # EnSRF with serial observation processing
   for iobs = 1:m
-     Hloc = H[iobs,:]
-     yloc = y[iobs]
-     Sloc = Hloc*Xfp
-     Hxfloc = Hloc*xf
-     # ()[1] makes a scalar instead of a vector of size 1
-     Floc = (Sloc*Sloc')[1] + (N-1)*R[iobs, iobs]
+      # H[[iobs],:] is necessary instead of H[iobs,:] to make it a row vector
 
-     Kloc = Xfp*Sloc' / Floc
-     xa = xf + Kloc * (yloc - Hxfloc)
-     alpha = 1.0 / (1.0 + sqrt( (N-1)*R[iobs,iobs]/Floc) )
-     Xap = Xfp - alpha * Kloc * Hloc * Xfp
+      Hloc = H[[iobs],:]
+      yloc = y[iobs]
 
-     Xfp = Xap
-     xf = xa
+      Sloc = Hloc*Xfp
+      Hxfloc = Hloc*xf
+
+      # ()[1] makes a scalar instead of a vector of size 1
+      Floc = (Sloc*Sloc')[1] + (N-1)*R[iobs, iobs]
+
+      Kloc = Xfp*Sloc' / Floc
+      xa = xf + Kloc * (yloc - Hxfloc)
+      alpha = 1.0 / (1.0 + sqrt( (N-1)*R[iobs,iobs]/Floc) )
+      Xap = Xfp - alpha * Kloc * Hloc * Xfp
+
+      Xfp = Xap
+      xf = xa
   end
-
 elseif method == "ETKF"
   # ETKF with decomposition of Stilde
   sqrtR = sqrtm(R)
@@ -111,7 +114,7 @@ elseif method == "ETKF2"
 
   if debug
       # ETKF2-eig
-      
+
     @test U_T*Sigma_T * U_T' ≈ invTTt
   end
 
@@ -224,7 +227,7 @@ elseif method == "SEIK"
   if debug
       # SEIK-L matrix
       @test L ≈ Xfp[:,1:N-1]
-      
+
       # SEIK-Pf
       Pf2 = 1/(N-1) * L * ((A'*A) \ L')
       @test Pf ≈ Pf2
@@ -269,7 +272,7 @@ elseif method == "ESTKF"
     #  ESTKF-Pf
     Pf2 = 1/(N-1) * L * ((A'*A) \ L')
     @test Pf ≈ Pf2
- 
+
     # ESTKF-Pf2
     Pf2 = 1/(N-1) * L * L'
     @test Pf ≈ Pf2
