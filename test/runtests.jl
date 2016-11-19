@@ -2,38 +2,38 @@ using DataAssim
 using Base.Test
 
 # number of elements in the state vector
-n = 10;
+n = 10
 # ensemble size
-N = 3;
+N = 3
 # number of observations
-m = 5;
+m = 5
 
 # if debug is true, then internal checks are activated
-debug = true;
+debug = true
 
 # tolerance for internal checking
-tol = 1e-10;
+tol = 1e-10
 
 # some random data
-y = randn(m,1);
-Xf = randn(n,N);
+y = randn(m,1)
+Xf = randn(n,N)
 
-H = randn(m,n);
+H = randn(m,n)
 
 y = 1:m
-Xf = reshape(sin(3*(1:(n*N))),n,N);
-H = reshape(1:(m*n),m,n);
+Xf = reshape(sin(3*(1:(n*N))),n,N)
+H = reshape(1:(m*n),m,n)
 
-R = 2*eye(m,m);
+R = 2*eye(m,m)
 
-xf = mean(Xf,2);
-Xfp = Xf - repmat(xf,1,N);
+xf = mean(Xf,2)
+Xfp = Xf - repmat(xf,1,N)
 
 
-Pf = (Xfp * Xfp') / (N-1);
-K = Pf * H'*inv(H*Pf*H' + R);
-Pa_check = Pf - K*H*Pf;
-xa_check = xf + K*(y - H*xf);
+Pf = (Xfp * Xfp') / (N-1)
+K = Pf * H'*inv(H*Pf*H' + R)
+Pa_check = Pf - K*H*Pf
+xa_check = xf + K*(y - H*xf)
 
 method = ["EnSRF","EAKF","ETKF","ETKF2","SEIK","ESTKF","serialEnSRF"]
 
@@ -41,8 +41,8 @@ method = ["EnSRF","EAKF","ETKF","ETKF2","SEIK","ESTKF","serialEnSRF"]
 
 for i = 1:length(method)
   Xa,xa = ensemble_analysis(Xf,H,y,R,method[i],
-                                    debug=debug, tolerance=tol);
-  Xap = Xa - repmat(xa,1,N);
+                                    debug=debug, tolerance=tol)
+  Xap = Xa - repmat(xa,1,N)
 
   # check analysis
 
