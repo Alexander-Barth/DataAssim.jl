@@ -54,7 +54,7 @@ for i = 1:length(method)
 
   # check analysis ensemble variance
 
-  @test (Xap * Xap') / (N-1) ≈ Pa_check 
+  @test (Xap * Xap') / (N-1) ≈ Pa_check
 end
 
 method = ["EnSRF","EAKF","ETKF","ETKF2","SEIK","ESTKF"]
@@ -76,6 +76,28 @@ for i = 1:length(method)
 
   # check analysis ensemble variance
 
-  @test (Xap * Xap') / (N-1) ≈ Pa_check 
+  @test (Xap * Xap') / (N-1) ≈ Pa_check
 end
+
+
+# local analysis
+
+# method to use for the analysis
+method = "ETKF2";
+part = collect(1:n);
+
+selectObs(i) = ones(m);
+
+Xag,xa = ensemble_analysis(Xf,H,y,R,method);
+# local analysis
+Xal,xal = local_ensemble_analysis(Xf,H,y,diag(R),part,selectObs,method);
+
+# check of global is the same as local analysis if all weights are 1
+@test Xag ≈ Xal
+
+# test compact function
+
+@test_approx_eq_eps compact_locfun(0) 1 tol
+@test_approx_eq_eps compact_locfun(2) 0 tol
+@test_approx_eq_eps compact_locfun(3) 0 tol
 
