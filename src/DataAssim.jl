@@ -4,7 +4,7 @@
 module DataAssim
 using Base.Test
 
-export ensemble_analysis, local_ensemble_analysis, compact_locfun
+export ensemble_analysis, local_ensemble_analysis, compact_locfun, ETKF
 
 """
     Xa,xa = ensemble_analysis(Xf,H,y,R,method,...)
@@ -496,5 +496,62 @@ function local_ensemble_analysis(
 
     return Xa,xa
 end
+
+
+
+"""
+    Xa,xa = ETKF(Xf,H,y,R)
+
+Computes analysis ensemble Xa based on forecast ensemble Xf
+and observations y using various ensemble scheme.
+
+# Input arguments:
+* `Xf`: forecast ensemble (n x N)
+* `y`: observations (m)
+* `H`: operator (m x n) (see also below)
+* `R`: observation error covariance  (m x m).
+
+# Output arguments:
+* `Xa`: the analysis ensemble (n x N)
+* `xa`: the analysis ensemble mean (n)
+"""
+function ETKF(Xf,H,y,R)
+
+
+    # ensemble size
+    N = size(Xf,2)
+
+    # number of observations
+    m = size(y,1)
+
+    xf = mean(Xf,2)[:,1]
+    Xfp = Xf - repmat(xf,1,N)
+
+    HXf = H*Xf
+
+    Hxf = mean(HXf,2)[:,1]
+    S = HXf - repmat(Hxf,1,N)
+
+    F = S*S' + (N-1) * R
+
+    # ETKF with square-root of invTTt (e.g. Hunt et al., 2007)
+
+    invR_S = R \ S
+    invTTt = (N-1) * eye(N) + S' * invR_S
+
+    e = eigfact(Symmetric(invTTt))
+    U_T = e.vectors
+    Sigma_T = Diagonal(e.values)
+
+    T = U_T * (sqrt(Sigma_T) \ U_T')
+    Xap = sqrt(N-1) * Xfp * T
+    xa = xf + Xfp * (U_T * (inv(Sigma_T) * U_T' * (invR_S' * (y - Hxf))))
+
+    Xa = Xap + repmat(xa,1,N)
+
+    return Xa,xa
+
+end
+
 
 end
