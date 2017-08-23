@@ -21,7 +21,7 @@ Xf = randn(n,N)
 H = randn(m,n)
 
 y = 1:m
-Xf = reshape(sin(3*(1:(n*N))),n,N)
+Xf = reshape(sin.(3*(1:(n*N))),n,N)
 H = reshape(1:(m*n),m,n)
 
 R = 2*eye(m,m)
@@ -97,7 +97,7 @@ Xal,xal = local_ensemble_analysis(Xf,H,y,diag(R),part,selectObs,method);
 
 # test compact function
 
-@test_approx_eq_eps compact_locfun(0) 1 tol
-@test_approx_eq_eps compact_locfun(2) 0 tol
-@test_approx_eq_eps compact_locfun(3) 0 tol
+@test compact_locfun(0) ≈ 1 atol=tol
+@test compact_locfun(2) ≈ 0 atol=tol
+@test compact_locfun(3) ≈ 0 atol=tol
 

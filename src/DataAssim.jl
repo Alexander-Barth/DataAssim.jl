@@ -69,12 +69,12 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
         # EnSRF
         Lambda_S,Gamma_S = eig(F)
         Lambda_S = diagm(Lambda_S)
-        X_S = S'*Gamma_S * sqrt(inv(Lambda_S))
+        X_S = S'*Gamma_S * sqrt.(inv(Lambda_S))
         U_S,Sigma_S,Z_S = svd(X_S)
 
         Sigma_S = diagm(Sigma_S)
 
-        Xap = Xfp * (U_S * (sqrt(eye(N)-Sigma_S*Sigma_S') * U_S'))
+        Xap = Xfp * (U_S * (sqrt.(eye(N)-Sigma_S*Sigma_S') * U_S'))
         xa = xf + Xfp * (S' * (Gamma_S * (Lambda_S \ (Gamma_S' * (y - Hxf)))))
 
     elseif method == "serialEnSRF"
@@ -127,7 +127,7 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
             @test K ≈ K2
         end
 
-        Xap = Xfp * (U_T * (sqrt(eye(Ndim)+Sigma_T*Sigma_T') \ U_T'))
+        Xap = Xfp * (U_T * (sqrt.(eye(Ndim)+Sigma_T*Sigma_T') \ U_T'))
         xa = xf + 1/sqrt(N-1) *  Xfp * (U_T * ((eye(Ndim)+Sigma_T'*Sigma_T) \
                                                (Sigma_T * V_T' * (sqrtR \ (y - Hxf)))))
 
@@ -149,7 +149,7 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
             @test U_T*Sigma_T * U_T' ≈ invTTt
         end
 
-        T = U_T * (sqrt(Sigma_T) \ U_T')
+        T = U_T * (sqrt.(Sigma_T) \ U_T')
 
         if debug
             # ETKF2-sym. square root
@@ -211,7 +211,7 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
 
         if debug
             # last singular should be zero
-            @test_approx_eq_eps abs(Sigma_A[N,N]) 0 tol
+            @test abs.(Sigma_A[N,N]) ≈ 0 atol=tol
         end
 
         U_A = U_A[:,1:N-1]
@@ -227,7 +227,7 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
 
         if debug
             # last eigenvalue should be zero
-            @test_approx_eq_eps abs(sqrtGamma_A[end,end]) 0 tol
+            @test abs(sqrtGamma_A[end,end]) ≈ 0 atol=tol
         end
 
         Gamma_A = sqrtGamma_A.^2 / (N-1)
@@ -239,8 +239,8 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
             @test Z_A * Gamma_A * Z_A' ≈ Pf
         end
 
-        Xap = 1/sqrt(N-1) * Xfp * (U_A * ((sqrt(eye(N-1) + Sigma_A'*Sigma_A)) \
-                                          (sqrt(inv(Gamma_A)) * (Z_A' * Xfp))))
+        Xap = 1/sqrt(N-1) * Xfp * (U_A * ((sqrt.(eye(N-1) + Sigma_A'*Sigma_A)) \
+                                          (sqrt.(inv(Gamma_A)) * (Z_A' * Xfp))))
 
         xa = xf + 1/sqrt(N-1) *  Xfp * (U_A * ((eye(N-1) + Sigma_A'*Sigma_A) \
                                                (Sigma_A * V_A' * (sqrtR \ (y - Hxf)))))
@@ -314,7 +314,7 @@ invTTt = (N-1)*eye(N-1) + HL' * (R \ HL)
 Sigma_E,U_E = eig(invTTt)
 Sigma_E = diagm(Sigma_E)
 
-T = U_E * (sqrt(Sigma_E) \ U_E')
+T = U_E * (sqrt.(Sigma_E) \ U_E')
 #T = sqrtm(inv(invTTt))
 
 if debug
@@ -427,10 +427,10 @@ selectObs: callback routine to select observations with a within a subdomain.
   As input is takes an integer representing the index of the state vector and
   returns a vector of weights (m x 1).
   For example:
-     selectObs = @(i) exp(- ((x(i) - xobs(:)).^2 + (y(i) - yobs(:)).^2)/L^2 );
+     selectObs(i) = exp(- ((x[i] - xobs[:]).^2 + (y(i) - yobs[:]).^2)/L^2 );
   or
-     selectObs = @(i) sangoma_compact_locfun(L,...
-         sqrt((x(i) - xobs(:)).^2 + (y(i) - yobs(:)).^2));
+     selectObs(i) = sangoma_compact_locfun(L,...
+         sqrt((x[i] - xobs[:]).^2 + (y[i] - yobs[:]).^2));
 
   where:
      x and y is the horizontal model grid
