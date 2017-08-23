@@ -457,10 +457,10 @@ ensemble_analysis, sangoma_compact_locfun
 
 
 function local_ensemble_analysis(
-     Xf,H,y,diagR,part,selectObs,method;
-     display = false,
-     minweight = 1e-8,
-     HXf = [])
+                                 Xf,H,y,diagR,part,selectObs,method;
+                                 display = false,
+                                 minweight = 1e-8,
+                                 HXf = [])
 
     # unique element of partition vector
     p = unique(part);
@@ -489,7 +489,7 @@ function local_ensemble_analysis(
         yloc = y[loc];
 
         Xa[sel,:],xa[sel] = ensemble_analysis(Xf[sel,:],[],
-                                                yloc,Rloc,method; HXf=HXfloc);
+                                              yloc,Rloc,method; HXf=HXfloc);
 
 
     end
