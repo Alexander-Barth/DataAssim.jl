@@ -45,17 +45,29 @@ for i = 1:length(method)
   Xap = Xa - repmat(xa,1,N)
 
   # check analysis
-
   @test xa ≈ xa_check
 
   # check analysis ensemble mean
-
   @test mean(Xa,2) ≈ xa_check
 
   # check analysis ensemble variance
-
   @test (Xap * Xap') / (N-1) ≈ Pa_check
 end
+
+# ETKF
+Xa,xa = ETKF(Xf,H,y,R)
+Xap = Xa - repmat(xa,1,N)
+
+# check analysis
+@test xa ≈ xa_check
+
+# check analysis ensemble mean
+@test mean(Xa,2) ≈ xa_check
+
+# check analysis ensemble variance
+@test (Xap * Xap') / (N-1) ≈ Pa_check
+
+
 
 method = ["EnSRF","EAKF","ETKF","ETKF2","SEIK","ESTKF"]
 

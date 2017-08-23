@@ -515,6 +515,7 @@ and observations y using various ensemble scheme.
 * `Xa`: the analysis ensemble (n x N)
 * `xa`: the analysis ensemble mean (n)
 """
+
 function ETKF(Xf,H,y,R)
 
 
@@ -524,13 +525,12 @@ function ETKF(Xf,H,y,R)
     # number of observations
     m = size(y,1)
 
-    xf = mean(Xf,2)[:,1]
-    Xfp = Xf - repmat(xf,1,N)
-
+    xf = mean(Xf,2)
+    Xfp = Xf .- xf    
     HXf = H*Xf
 
-    Hxf = mean(HXf,2)[:,1]
-    S = HXf - repmat(Hxf,1,N)
+    Hxf = mean(HXf,2)
+    S = HXf .- Hxf
 
     F = S*S' + (N-1) * R
 
@@ -543,15 +543,16 @@ function ETKF(Xf,H,y,R)
     U_T = e.vectors
     Sigma_T = Diagonal(e.values)
 
-    T = U_T * (sqrt(Sigma_T) \ U_T')
+    T = U_T * (sqrt.(Sigma_T) \ U_T')
     Xap = sqrt(N-1) * Xfp * T
-    xa = xf + Xfp * (U_T * (inv(Sigma_T) * U_T' * (invR_S' * (y - Hxf))))
+    xa = xf[:,1] + Xfp * (U_T * (inv(Sigma_T) * U_T' * (invR_S' * (y - Hxf[:,1]))))
 
     Xa = Xap + repmat(xa,1,N)
 
     return Xa,xa
 
 end
+
 
 
 end
