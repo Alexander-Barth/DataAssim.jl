@@ -35,13 +35,13 @@ K = Pf * H'*inv(H*Pf*H' + R)
 Pa_check = Pf - K*H*Pf
 xa_check = xf + K*(y - H*xf)
 
-method = ["EnSRF","EAKF","ETKF","ETKF2","SEIK","ESTKF","serialEnSRF"]
+methods = [DataAssim.EnSRF, DataAssim.EAKF, DataAssim.ETKF, DataAssim.ETKF2, DataAssim.SEIK, DataAssim.ESTKF, DataAssim.serialEnSRF]
 
 # Non-serial algorithms (all observations at once) with H
 
-for i = 1:length(method)
-  Xa,xa = ensemble_analysis(Xf,H,y,R,method[i],
-                                    debug=debug, tolerance=tol)
+for method in methods
+    #Xa,xa = method(Xf,H*Xf,y,R; debug=debug, tolerance=tol, H=H)
+    Xa,xa = method(Xf,H*Xf,y,R,H)
   Xap = Xa - repmat(xa,1,N)
 
   # check analysis
@@ -53,63 +53,23 @@ for i = 1:length(method)
   # check analysis ensemble variance
   @test (Xap * Xap') / (N-1) ≈ Pa_check
 end
-
-# ETKF
-Xa,xa = ETKF(Xf,H,y,R)
-Xap = Xa - repmat(xa,1,N)
-
-# check analysis
-@test xa ≈ xa_check
-
-# check analysis ensemble mean
-@test mean(Xa,2) ≈ xa_check
-
-# check analysis ensemble variance
-@test (Xap * Xap') / (N-1) ≈ Pa_check
-
-
-
-method = ["EnSRF","EAKF","ETKF","ETKF2","SEIK","ESTKF"]
-
-# Non-serial algorithms (all observations at once) with HXf
-
-for i = 1:length(method)
-  Xa,xa = ensemble_analysis(Xf,[],y,R,method[i],
-                                    debug=debug, tolerance=tol,HXf=H*Xf)
-  Xap = Xa - repmat(xa,1,N)
-
-  # check analysis
-
-  @test xa ≈ xa_check
-
-  # check analysis ensemble mean
-
-  @test mean(Xa,2) ≈ xa_check
-
-  # check analysis ensemble variance
-
-  @test (Xap * Xap') / (N-1) ≈ Pa_check
-end
-
 
 # local analysis
 
-# method to use for the analysis
-method = "ETKF2";
 part = collect(1:n);
 
 selectObs(i) = ones(m);
 
-Xag,xa = ensemble_analysis(Xf,H,y,R,method);
+Xag,xa = ETKF2(Xf,H*Xf,y,R,H);
 # local analysis
-Xal,xal = local_ensemble_analysis(Xf,H,y,diag(R),part,selectObs,method);
+Xal,xal = local_ETKF2(Xf,H,y,diag(R),part,selectObs);
 
 # check of global is the same as local analysis if all weights are 1
 @test Xag ≈ Xal
 
 # test compact function
 
-@test compact_locfun(0) ≈ 1 atol=tol
-@test compact_locfun(2) ≈ 0 atol=tol
-@test compact_locfun(3) ≈ 0 atol=tol
+@test DataAssim.compact_locfun(0) ≈ 1 atol=tol
+@test DataAssim.compact_locfun(2) ≈ 0 atol=tol
+@test DataAssim.compact_locfun(3) ≈ 0 atol=tol
 

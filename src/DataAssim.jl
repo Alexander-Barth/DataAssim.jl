@@ -4,28 +4,28 @@
 module DataAssim
 using Base.Test
 
-export ensemble_analysis, local_ensemble_analysis, compact_locfun, ETKF
+export compact_locfun
 
+for method = [:EnSRF, :EAKF, :ETKF, :ETKF2, :SEIK, :ESTKF, :serialEnSRF]
+
+    @eval begin
 """
-    Xa,xa = ensemble_analysis(Xf,H,y,R,method,...)
+    Xa,xa = "ensemble_analysis"(Xf,HXf,y,R,H,...)
 
 Computes analysis ensemble Xa based on forecast ensemble Xf
 and observations y using various ensemble scheme.
+The function name "ensemble_analysis" can be EnSRF, EAKF, ETKF, SEIK, ESTKF or EnKF.
 
 # Input arguments:
 * `Xf`: forecast ensemble (n x N)
+* `HXf`: the observation operator applied on the ensemble (product H*Xf)
 * `y`: observations (m)
-* `H`: operator (m x n) (see also below)
 * `R`: observation error covariance  (m x m).
-* `method`: Method can be the string 'EnSRF', 'EAKF', 'ETKF', 'ETKF2', 'SEIK',
-   'ESTKF' or 'EnKF'.
-   'ETKF': use SVD decomposition of invTTt (see Sangoma D3.1)
-   'ETKF2': use eigendecomposition decomposition of invTTt (see Hunt et al., 2007)
+* `H`: operator (m x n). Except for the serialEnSRF it is never used and can be empty
 
 # Optional keywords arguments:
 * `debug`: set to true to enable debugging. Default (false) is no debugging.
 * `tolerance`: expected rounding error (default 1e-10) for debugging checks. This is not used if debug is false.
-* `HXf`: if non empty, then it is the product H Xf. In this case, H is not used (except for EnSRF).
 
 # Output arguments:
 * `Xa`: the analysis ensemble (n x N)
@@ -34,8 +34,11 @@ and observations y using various ensemble scheme.
 Notations follows:
 Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 """
-function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=[])
+        
+        function $method(Xf,HXf,y,R,H; debug = false, tolerance=1e-10)
+#        function $method(Xf,HXf,y,R,H)
 
+            debug = false; tolerance=1e-10; 
     tol = tolerance
 
     # ensemble size
@@ -44,15 +47,10 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
     # number of observations
     m = size(y,1)
 
-    xf = mean(Xf,2)
+    xf = mean(Xf,2)[:,1]
     Xfp = Xf - repmat(xf,1,N)
 
-    # do not use isempty here because m might be zero
-    if HXf == []
-        HXf = H*Xf
-    end
-
-    Hxf = mean(HXf,2)
+    Hxf = mean(HXf,2)[:,1]
     S = HXf - repmat(Hxf,1,N)
 
     F = S*S' + (N-1) * R
@@ -65,10 +63,15 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
         K = PfH * inv(HPfH + R)
     end
 
-    if method == "EnSRF"
+    if $method == EnSRF
         # EnSRF
-        Lambda_S,Gamma_S = eig(F)
-        Lambda_S = diagm(Lambda_S)
+        e = eigfact(Symmetric(F))
+        Gamma_S = e.vectors
+        Lambda_S = Diagonal(e.values)
+        
+        #Lambda_S,Gamma_S = eig(F)
+        #Lambda_S = diagm(Lambda_S)
+        
         X_S = S'*Gamma_S * sqrt.(inv(Lambda_S))
         U_S,Sigma_S,Z_S = svd(X_S)
 
@@ -77,11 +80,13 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
         Xap = Xfp * (U_S * (sqrt.(eye(N)-Sigma_S*Sigma_S') * U_S'))
         xa = xf + Xfp * (S' * (Gamma_S * (Lambda_S \ (Gamma_S' * (y - Hxf)))))
 
-    elseif method == "serialEnSRF"
+    elseif $method == serialEnSRF
         # EnSRF with serial observation processing
         for iobs = 1:m
+            # the number 1 with the same element type of Xf
+            one = eltype(Xf)(1)
+            
             # H[[iobs],:] is necessary instead of H[iobs,:] to make it a row vector
-
             Hloc = H[[iobs],:]
             yloc = y[iobs]
 
@@ -89,17 +94,17 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
             Hxfloc = Hloc*xf
 
             # ()[1] makes a scalar instead of a vector of size 1
-            Floc = (Sloc*Sloc')[1] + (N-1)*R[iobs, iobs]
+            Floc = (Sloc*Sloc')[1] + (N-1)*R[iobs, iobs] 
 
             Kloc = Xfp*Sloc' / Floc
             xa = xf + Kloc * (yloc - Hxfloc)
-            alpha = 1.0 / (1.0 + sqrt( (N-1)*R[iobs,iobs]/Floc) )
-            Xap = Xfp - alpha * Kloc * Hloc * Xfp
+            alpha = one / (one + sqrt( (N-1)*R[iobs,iobs]/Floc) )
+            Xap = Xfp - alpha * Kloc * Sloc
 
             Xfp = Xap
             xf = xa
         end
-    elseif method == "ETKF"
+    elseif $method == ETKF
         # ETKF with decomposition of Stilde
         sqrtR = sqrtm(R)
         Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
@@ -131,17 +136,18 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
         xa = xf + 1/sqrt(N-1) *  Xfp * (U_T * ((eye(Ndim)+Sigma_T'*Sigma_T) \
                                                (Sigma_T * V_T' * (sqrtR \ (y - Hxf)))))
 
-    elseif method == "ETKF2"
+    elseif $method == ETKF2
         # ETKF with square-root of invTTt (e.g. Hunt et al., 2007)
 
         invR_S = R \ S
-        invTTt = (N-1) * eye(N) + S' * invR_S
+        invTTt = Symmetric((N-1) * eye(N) + S' * invR_S)
 
-        # eig is more precise if the matrix is exactly symmetric
-        invTTt = (invTTt + invTTt')/2
+        # eig is symmetric, thus the type of its eigenvalues are known
 
-        Sigma_T,U_T = eig(invTTt)
-        Sigma_T = diagm(Sigma_T)
+        e = eigfact(invTTt)
+        U_T = e.vectors
+        Sigma_T = Diagonal(e.values)
+
 
         if debug
             # ETKF2-eig
@@ -160,7 +166,7 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
         xa = xf + Xfp * (U_T * (inv(Sigma_T) * U_T' * (invR_S' * (y - Hxf))))
 
 
-        # elseif method == "ETKF3"
+        # elseif $method == "ETKF3"
         #   # ETKF in style of ESTKF
         #   A_T = zeros(N,N)
 
@@ -199,7 +205,7 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
         #   Xap = sqrt(N-1) * L*T * A_T'
         #   xa = xf + L * (U_T * (inv(Sigma_T) * U_T' * (HL' * (R \ (y - Hxf)))))
 
-    elseif method == "EAKF"
+    elseif $method == EAKF
         # EAKF
         sqrtR = sqrtm(R)
 
@@ -245,7 +251,7 @@ function ensemble_analysis(Xf,H,y,R,method; debug = false, tolerance=1e-10, HXf=
         xa = xf + 1/sqrt(N-1) *  Xfp * (U_A * ((eye(N-1) + Sigma_A'*Sigma_A) \
                                                (Sigma_A * V_A' * (sqrtR \ (y - Hxf)))))
 
-elseif method == "SEIK"
+elseif $method == SEIK
 # SEIK
 
 A = zeros(N,N-1)
@@ -280,7 +286,7 @@ Omega = householder(w)
 Xap = sqrt(N-1) * L*T*Omega'
 
 xa = xf + L * (TTt * (HL' * (R \ (y - Hxf))))
-elseif method == "ESTKF"
+elseif $method == ESTKF
 # ESTKF
 A = zeros(N,N-1)
 
@@ -324,7 +330,7 @@ end
 
 Xap = sqrt(N-1) * L*T * A'
 xa = xf + L * (U_E * (inv(Sigma_E) * U_E' * (HL' * (R \ (y - Hxf)))))
-elseif method == "EnKF"
+elseif $method == EnKF
 # EnKF
 sqrtR = sqrtm(R)
 
@@ -344,16 +350,107 @@ Xa = Xf + Xfp * (S' * (U_F * (inv(Sigma_F)^2 * (U_F' * (Y-HXf)))))
 
 xa = mean(Xa,2)
 Xap = Xa - repmat(xa,1,N)
-else
-error("sangoma:unknown_method")
 end
 
 Xa = Xap + repmat(xa,1,N)
 
 return Xa,xa
 
-end
+end # function $method
 
+export $method
+
+"""
+[Xa,xa] = local_ensemble_analysis(...
+   Xf,H,y,diagR,part,selectObs,method,...)
+
+Computes analysis ensemble Xa based on forecast ensemble Xf using the
+observation y.
+
+Inputs:
+Xf: forecast ensemble (n x N)
+H: observation operator (m x n)
+y: observation (m x 1)
+diagR: diagonal of the observation error covariance R (m x 1)
+part: vector of integer "labels". Every element of the state vector with the
+  same number belong to the same subdomain
+selectObs: callback routine to select observations with a within a subdomain.
+  As input is takes an integer representing the index of the state vector and
+  returns a vector of weights (m x 1).
+  For example:
+     selectObs(i) = exp(- ((x[i] - xobs[:]).^2 + (y(i) - yobs[:]).^2)/L^2 );
+  or
+     selectObs(i) = sangoma_compact_locfun(L,...
+         sqrt((x[i] - xobs[:]).^2 + (y[i] - yobs[:]).^2));
+
+  where:
+     x and y is the horizontal model grid
+     xobs and yobs are the localtion of the observations
+     L is a correlation length-scale
+
+method: method is one analysis schemes implemented sangoma_ensemble_analysis
+  (except for EnSRF)
+
+Optional inputs:
+'display', display: if true, then display progress (false is the default)
+'minweight', minweight: analysis is performed using observations for which
+   weights is larger than minweight. (default 1e-8)
+'HXf', HXf: if non empty, then it is the product H Xf. In this case, H is not
+   used
+
+Output:
+Xa: the analysis ensemble (n x N)
+xa: the analysis ensemble mean (n x 1)
+
+See also:
+ensemble_analysis, sangoma_compact_locfun
+"""
+
+# local_ETLK, local_...
+function $(Symbol("local_" * string(method)))(Xf,H,y,diagR,part,selectObs;
+                       display = false,
+                       minweight = 1e-8,
+                       HXf = [])
+
+    # unique element of partition vector
+    p = unique(part);
+
+    Xa = zeros(size(Xf));
+    xa = zeros(size(Xf,1),1);
+
+    # do not use isempty here because m might be zero
+    if isequal(HXf,[])
+        HXf = H*Xf;
+    end
+
+    # loop over all zones
+    for i=1:length(p)
+        if display
+            @printf("zone %d out of %d\n",i,length(p));
+        end
+
+        sel = find(part .== p[i]);
+        weight = selectObs(sel[1]);
+
+        # restrict to local observations where weight exceeds minweight
+        loc = find(weight .> minweight);
+        HXfloc = HXf[loc,:];
+        Rloc = diagm(diagR[loc] ./ weight[loc]);
+        yloc = y[loc];
+
+        Xa[sel,:],xa[sel] = $method(Xf[sel,:],HXfloc,
+                                    yloc,Rloc, []);
+
+
+    end
+
+    return Xa,xa
+end # function local_$method
+
+export $(Symbol("local_" * string(method)))
+
+end # @eval begin
+end # for method ...
 
 
 function householder(w)
@@ -408,151 +505,6 @@ function compact_locfun(r)
         return 0.
     end
 end
-
-"""
-[Xa,xa] = sangoma_local_ensemble_analysis(...
-   Xf,H,y,diagR,part,selectObs,method,...)
-
-Computes analysis ensemble Xa based on forecast ensemble Xf using the
-observation y.
-
-Inputs:
-Xf: forecast ensemble (n x N)
-H: observation operator (m x n)
-y: observation (m x 1)
-diagR: diagonal of the observation error covariance R (m x 1)
-part: vector of integer "labels". Every element of the state vector with the
-  same number belong to the same subdomain
-selectObs: callback routine to select observations with a within a subdomain.
-  As input is takes an integer representing the index of the state vector and
-  returns a vector of weights (m x 1).
-  For example:
-     selectObs(i) = exp(- ((x[i] - xobs[:]).^2 + (y(i) - yobs[:]).^2)/L^2 );
-  or
-     selectObs(i) = sangoma_compact_locfun(L,...
-         sqrt((x[i] - xobs[:]).^2 + (y[i] - yobs[:]).^2));
-
-  where:
-     x and y is the horizontal model grid
-     xobs and yobs are the localtion of the observations
-     L is a correlation length-scale
-
-method: method is one analysis schemes implemented sangoma_ensemble_analysis
-  (except for EnSRF)
-
-Optional inputs:
-'display', display: if true, then display progress (false is the default)
-'minweight', minweight: analysis is performed using observations for which
-   weights is larger than minweight. (default 1e-8)
-'HXf', HXf: if non empty, then it is the product H Xf. In this case, H is not
-   used
-
-Output:
-Xa: the analysis ensemble (n x N)
-xa: the analysis ensemble mean (n x 1)
-
-See also:
-ensemble_analysis, sangoma_compact_locfun
-"""
-
-
-function local_ensemble_analysis(
-                                 Xf,H,y,diagR,part,selectObs,method;
-                                 display = false,
-                                 minweight = 1e-8,
-                                 HXf = [])
-
-    # unique element of partition vector
-    p = unique(part);
-
-    Xa = zeros(size(Xf));
-    xa = zeros(size(Xf,1),1);
-
-    # do not use isempty here because m might be zero
-    if isequal(HXf,[])
-        HXf = H*Xf;
-    end
-
-    # loop over all zones
-    for i=1:length(p)
-        if display
-            @printf("zone %d out of %d\n",i,length(p));
-        end
-
-        sel = find(part .== p[i]);
-        weight = selectObs(sel[1]);
-
-        # restrict to local observations where weight exceeds minweight
-        loc = find(weight .> minweight);
-        HXfloc = HXf[loc,:];
-        Rloc = diagm(diagR[loc] ./ weight[loc]);
-        yloc = y[loc];
-
-        Xa[sel,:],xa[sel] = ensemble_analysis(Xf[sel,:],[],
-                                              yloc,Rloc,method; HXf=HXfloc);
-
-
-    end
-
-    return Xa,xa
-end
-
-
-
-"""
-    Xa,xa = ETKF(Xf,H,y,R)
-
-Computes analysis ensemble Xa based on forecast ensemble Xf
-and observations y using various ensemble scheme.
-
-# Input arguments:
-* `Xf`: forecast ensemble (n x N)
-* `y`: observations (m)
-* `H`: operator (m x n) (see also below)
-* `R`: observation error covariance  (m x m).
-
-# Output arguments:
-* `Xa`: the analysis ensemble (n x N)
-* `xa`: the analysis ensemble mean (n)
-"""
-
-function ETKF(Xf,H,y,R)
-
-
-    # ensemble size
-    N = size(Xf,2)
-
-    # number of observations
-    m = size(y,1)
-
-    xf = mean(Xf,2)
-    Xfp = Xf .- xf    
-    HXf = H*Xf
-
-    Hxf = mean(HXf,2)
-    S = HXf .- Hxf
-
-    F = S*S' + (N-1) * R
-
-    # ETKF with square-root of invTTt (e.g. Hunt et al., 2007)
-
-    invR_S = R \ S
-    invTTt = (N-1) * eye(N) + S' * invR_S
-
-    e = eigfact(Symmetric(invTTt))
-    U_T = e.vectors
-    Sigma_T = Diagonal(e.values)
-
-    T = U_T * (sqrt.(Sigma_T) \ U_T')
-    Xap = sqrt(N-1) * Xfp * T
-    xa = xf[:,1] + Xfp * (U_T * (inv(Sigma_T) * U_T' * (invR_S' * (y - Hxf[:,1]))))
-
-    Xa = Xap + repmat(xa,1,N)
-
-    return Xa,xa
-
-end
-
 
 
 end
