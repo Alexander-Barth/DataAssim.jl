@@ -9,12 +9,12 @@ export compact_locfun
 for method = [:EnSRF, :EAKF, :ETKF, :ETKF2, :SEIK, :ESTKF, :serialEnSRF]
 
     @eval begin
-"""
-    Xa,xa = "ensemble_analysis"(Xf,HXf,y,R,H,...)
-
-Computes analysis ensemble Xa based on forecast ensemble Xf
-and observations y using various ensemble scheme.
-The function name "ensemble_analysis" can be EnSRF, EAKF, ETKF, SEIK, ESTKF or EnKF.
+        """
+        Xa,xa = "ensemble_analysis"(Xf,HXf,y,R,H,...)
+    
+    Computes analysis ensemble Xa based on forecast ensemble Xf
+    and observations y using various ensemble scheme.
+    The function name "ensemble_analysis" can be EnSRF, EAKF, ETKF, SEIK, ESTKF or EnKF.
 
 # Input arguments:
 * `Xf`: forecast ensemble (n x N)
@@ -36,220 +36,220 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 """
         
         function $method(Xf,HXf,y,R,H; debug = false, tolerance=1e-10)
-#        function $method(Xf,HXf,y,R,H)
+            #        function $method(Xf,HXf,y,R,H)
 
             debug = false; tolerance=1e-10; 
-    tol = tolerance
-
-    # ensemble size
-    N = size(Xf,2)
-
-    # number of observations
-    m = size(y,1)
-
-    xf = mean(Xf,2)[:,1]
-    Xfp = Xf - repmat(xf,1,N)
-
-    Hxf = mean(HXf,2)[:,1]
-    S = HXf - repmat(Hxf,1,N)
-
-    F = S*S' + (N-1) * R
-
-    if debug
-        Pf = (Xfp * Xfp') / (N-1)
-        HPfH = (S * S') / (N-1)
-        PfH = (Xfp * S') / (N-1)
-
-        K = PfH * inv(HPfH + R)
-    end
-
-    if $method == EnSRF
-        # EnSRF
-        e = eigfact(Symmetric(F))
-        Gamma_S = e.vectors
-        Lambda_S = Diagonal(e.values)
-        
-        #Lambda_S,Gamma_S = eig(F)
-        #Lambda_S = diagm(Lambda_S)
-        
-        X_S = S'*Gamma_S * sqrt.(inv(Lambda_S))
-        U_S,Sigma_S,Z_S = svd(X_S)
-
-        Sigma_S = diagm(Sigma_S)
-
-        Xap = Xfp * (U_S * (sqrt.(eye(N)-Sigma_S*Sigma_S') * U_S'))
-        xa = xf + Xfp * (S' * (Gamma_S * (Lambda_S \ (Gamma_S' * (y - Hxf)))))
-
-    elseif $method == serialEnSRF
-        # EnSRF with serial observation processing
-        for iobs = 1:m
-            # the number 1 with the same element type of Xf
-            one = eltype(Xf)(1)
+            tol = tolerance
             
-            # H[[iobs],:] is necessary instead of H[iobs,:] to make it a row vector
-            Hloc = H[[iobs],:]
-            yloc = y[iobs]
+            # ensemble size
+            N = size(Xf,2)
+            
+            # number of observations
+            m = size(y,1)
+            
+            xf = mean(Xf,2)[:,1]
+            Xfp = Xf - repmat(xf,1,N)
+            
+            Hxf = mean(HXf,2)[:,1]
+            S = HXf - repmat(Hxf,1,N)
 
-            Sloc = Hloc*Xfp
-            Hxfloc = Hloc*xf
+            F = S*S' + (N-1) * R
 
-            # ()[1] makes a scalar instead of a vector of size 1
-            Floc = (Sloc*Sloc')[1] + (N-1)*R[iobs, iobs] 
+            if debug
+                Pf = (Xfp * Xfp') / (N-1)
+                HPfH = (S * S') / (N-1)
+                PfH = (Xfp * S') / (N-1)
 
-            Kloc = Xfp*Sloc' / Floc
-            xa = xf + Kloc * (yloc - Hxfloc)
-            alpha = one / (one + sqrt( (N-1)*R[iobs,iobs]/Floc) )
-            Xap = Xfp - alpha * Kloc * Sloc
+                K = PfH * inv(HPfH + R)
+            end
 
-            Xfp = Xap
-            xf = xa
-        end
-    elseif $method == ETKF
-        # ETKF with decomposition of Stilde
-        sqrtR = sqrtm(R)
-        Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
+            if $method == EnSRF
+                # EnSRF
+                e = eigfact(Symmetric(F))
+                Gamma_S = e.vectors
+                Lambda_S = Diagonal(e.values)
+                
+                #Lambda_S,Gamma_S = eig(F)
+                #Lambda_S = diagm(Lambda_S)
+                
+                X_S = S'*Gamma_S * sqrt.(inv(Lambda_S))
+                U_S,Sigma_S,Z_S = svd(X_S)
 
-        # "economy size" SVD decomposition
-        U_T,Sigma_T,V_T = svd(Stilde')
-        Sigma_T = diagm(Sigma_T)
+                Sigma_S = diagm(Sigma_S)
 
-        if size(Sigma_T,2) > N
-            Sigma_T = Sigma_T(:,1:N)
-            V_T = V_T(:,1:N)
-        end
-        Ndim = size(Sigma_T,1)
+                Xap = Xfp * (U_S * (sqrt.(eye(N)-Sigma_S*Sigma_S') * U_S'))
+                xa = xf + Xfp * (S' * (Gamma_S * (Lambda_S \ (Gamma_S' * (y - Hxf)))))
 
-        TTt = eye(N) - S'*(F\S)
+            elseif $method == serialEnSRF
+                # EnSRF with serial observation processing
+                for iobs = 1:m
+                    # the number 1 with the same element type of Xf
+                    one = eltype(Xf)(1)
+                    
+                    # H[[iobs],:] is necessary instead of H[iobs,:] to make it a row vector
+                    Hloc = H[[iobs],:]
+                    yloc = y[iobs]
 
-        if debug
-            # ETKF-TTt
-            @test TTt ≈ U_T * ((eye(Ndim)+Sigma_T*Sigma_T') \ U_T')
+                    Sloc = Hloc*Xfp
+                    Hxfloc = Hloc*xf
 
-            "ETKF-Kalman gain"
-            K2 = 1/sqrt(N-1) * Xfp *
-                (Stilde' * ((Stilde*Stilde'+ eye(m)) \ inv(sqrtR)))
+                    # ()[1] makes a scalar instead of a vector of size 1
+                    Floc = (Sloc*Sloc')[1] + (N-1)*R[iobs, iobs] 
 
-            @test K ≈ K2
-        end
+                    Kloc = Xfp*Sloc' / Floc
+                    xa = xf + Kloc * (yloc - Hxfloc)
+                    alpha = one / (one + sqrt( (N-1)*R[iobs,iobs]/Floc) )
+                    Xap = Xfp - alpha * Kloc * Sloc
 
-        Xap = Xfp * (U_T * (sqrt.(eye(Ndim)+Sigma_T*Sigma_T') \ U_T'))
-        xa = xf + 1/sqrt(N-1) *  Xfp * (U_T * ((eye(Ndim)+Sigma_T'*Sigma_T) \
-                                               (Sigma_T * V_T' * (sqrtR \ (y - Hxf)))))
+                    Xfp = Xap
+                    xf = xa
+                end
+            elseif $method == ETKF
+                # ETKF with decomposition of Stilde
+                sqrtR = sqrtm(R)
+                Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
 
-    elseif $method == ETKF2
-        # ETKF with square-root of invTTt (e.g. Hunt et al., 2007)
+                # "economy size" SVD decomposition
+                U_T,Sigma_T,V_T = svd(Stilde')
+                Sigma_T = diagm(Sigma_T)
 
-        invR_S = R \ S
-        invTTt = Symmetric((N-1) * eye(N) + S' * invR_S)
+                if size(Sigma_T,2) > N
+                    Sigma_T = Sigma_T(:,1:N)
+                    V_T = V_T(:,1:N)
+                end
+                Ndim = size(Sigma_T,1)
 
-        # eig is symmetric, thus the type of its eigenvalues are known
+                TTt = eye(N) - S'*(F\S)
 
-        e = eigfact(invTTt)
-        U_T = e.vectors
-        Sigma_T = Diagonal(e.values)
+                if debug
+                    # ETKF-TTt
+                    @test TTt ≈ U_T * ((eye(Ndim)+Sigma_T*Sigma_T') \ U_T')
+
+                    "ETKF-Kalman gain"
+                    K2 = 1/sqrt(N-1) * Xfp *
+                        (Stilde' * ((Stilde*Stilde'+ eye(m)) \ inv(sqrtR)))
+
+                    @test K ≈ K2
+                end
+
+                Xap = Xfp * (U_T * (sqrt.(eye(Ndim)+Sigma_T*Sigma_T') \ U_T'))
+                xa = xf + 1/sqrt(N-1) *  Xfp * (U_T * ((eye(Ndim)+Sigma_T'*Sigma_T) \
+                                                       (Sigma_T * V_T' * (sqrtR \ (y - Hxf)))))
+
+            elseif $method == ETKF2
+                # ETKF with square-root of invTTt (e.g. Hunt et al., 2007)
+
+                invR_S = R \ S
+                invTTt = Symmetric((N-1) * eye(N) + S' * invR_S)
+
+                # eig is symmetric, thus the type of its eigenvalues are known
+
+                e = eigfact(invTTt)
+                U_T = e.vectors
+                Sigma_T = Diagonal(e.values)
 
 
-        if debug
-            # ETKF2-eig
+                if debug
+                    # ETKF2-eig
 
-            @test U_T*Sigma_T * U_T' ≈ invTTt
-        end
+                    @test U_T*Sigma_T * U_T' ≈ invTTt
+                end
 
-        T = U_T * (sqrt.(Sigma_T) \ U_T')
+                T = U_T * (sqrt.(Sigma_T) \ U_T')
 
-        if debug
-            # ETKF2-sym. square root
-            @test T*T ≈ inv(invTTt)
-        end
+                if debug
+                    # ETKF2-sym. square root
+                    @test T*T ≈ inv(invTTt)
+                end
 
-        Xap = sqrt(N-1) * Xfp * T
-        xa = xf + Xfp * (U_T * (inv(Sigma_T) * U_T' * (invR_S' * (y - Hxf))))
+                Xap = sqrt(N-1) * Xfp * T
+                xa = xf + Xfp * (U_T * (inv(Sigma_T) * U_T' * (invR_S' * (y - Hxf))))
 
 
-        # elseif $method == "ETKF3"
-        #   # ETKF in style of ESTKF
-        #   A_T = zeros(N,N)
+                # elseif $method == "ETKF3"
+                #   # ETKF in style of ESTKF
+                #   A_T = zeros(N,N)
 
-        #   for j = 1:N
-        #     for i = 1:N
-        #       if i == j
-        #         A_T(i,j) = 1 - 1/N
-        #       else
-        #         A_T(i,j) = - 1/N
-        #       end
-        #     end
-        #   end
+                #   for j = 1:N
+                #     for i = 1:N
+                #       if i == j
+                #         A_T(i,j) = 1 - 1/N
+                #       else
+                #         A_T(i,j) = - 1/N
+                #       end
+                #     end
+                #   end
 
-        #   L = Xf*A_T
-        #   HL = HXf*(A_T*L)
+                #   L = Xf*A_T
+                #   HL = HXf*(A_T*L)
 
-        #   if debug
-        #     Pf2 = 1/(N-1) * L * ((A_T'*A_T) \ L')
-        #     @test Pf,Pf2',"ETKF3-Pf",tol)
-        #     Pf2 = 1/(N-1) * L * L'
-        #     @test Pf,Pf2',"ETKF3-Pf2",tol)
-        #   end
+                #   if debug
+                #     Pf2 = 1/(N-1) * L * ((A_T'*A_T) \ L')
+                #     @test Pf,Pf2',"ETKF3-Pf",tol)
+                #     Pf2 = 1/(N-1) * L * L'
+                #     @test Pf,Pf2',"ETKF3-Pf2",tol)
+                #   end
 
-        #   invTTt = (N-1)*eye(N) + HL' * (R \ HL)
+                #   invTTt = (N-1)*eye(N) + HL' * (R \ HL)
 
-        #   Sigma_T,U_T = eig(invTTt)
-        #   Sigma_T = diagm(Sigma_T)
+                #   Sigma_T,U_T = eig(invTTt)
+                #   Sigma_T = diagm(Sigma_T)
 
-        #   T = U_T * (sqrt(Sigma_T) \ U_T')
-        #   #T = sqrtm(inv(invTTt))
+                #   T = U_T * (sqrt(Sigma_T) \ U_T')
+                #   #T = sqrtm(inv(invTTt))
 
-        #   if debug
-        #     @test T*T,inv(invTTt),"ETKF3-sym. square root",tol)
-        #   end
+                #   if debug
+                #     @test T*T,inv(invTTt),"ETKF3-sym. square root",tol)
+                #   end
 
-        #   Xap = sqrt(N-1) * L*T * A_T'
-        #   xa = xf + L * (U_T * (inv(Sigma_T) * U_T' * (HL' * (R \ (y - Hxf)))))
+                #   Xap = sqrt(N-1) * L*T * A_T'
+                #   xa = xf + L * (U_T * (inv(Sigma_T) * U_T' * (HL' * (R \ (y - Hxf)))))
 
-    elseif $method == EAKF
-        # EAKF
-        sqrtR = sqrtm(R)
+            elseif $method == EAKF
+                # EAKF
+                sqrtR = sqrtm(R)
 
-        Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
+                Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
 
-        # Sigma_A should have the size (N-1) x (N-1)
-        U_A,Sigma_A,V_A = svd(Stilde')
-        Sigma_A = diagm(Sigma_A)
+                # Sigma_A should have the size (N-1) x (N-1)
+U_A,Sigma_A,V_A = svd(Stilde')
+Sigma_A = diagm(Sigma_A)
 
-        if debug
-            # last singular should be zero
-            @test abs.(Sigma_A[N,N]) ≈ 0 atol=tol
-        end
+if debug
+    # last singular should be zero
+    @test abs.(Sigma_A[N,N]) ≈ 0 atol=tol
+end
 
-        U_A = U_A[:,1:N-1]
-        Sigma_A = Sigma_A[1:N-1,1:N-1]
-        V_A = V_A[:,1:N-1]
+U_A = U_A[:,1:N-1]
+Sigma_A = Sigma_A[1:N-1,1:N-1]
+V_A = V_A[:,1:N-1]
 
-        # eigenvalue decomposition of Pf
-        # Gamma_A should have the size (N-1) x (N-1)
+# eigenvalue decomposition of Pf
+# Gamma_A should have the size (N-1) x (N-1)
 
-        #[Z_A,Gamma_A] = eig(Pf)
-        Z_A,sqrtGamma_A,dummy = svd(Xfp)
-        sqrtGamma_A = diagm(sqrtGamma_A)
+#[Z_A,Gamma_A] = eig(Pf)
+Z_A,sqrtGamma_A,dummy = svd(Xfp)
+sqrtGamma_A = diagm(sqrtGamma_A)
 
-        if debug
-            # last eigenvalue should be zero
-            @test abs(sqrtGamma_A[end,end]) ≈ 0 atol=tol
-        end
+if debug
+    # last eigenvalue should be zero
+    @test abs(sqrtGamma_A[end,end]) ≈ 0 atol=tol
+end
 
-        Gamma_A = sqrtGamma_A.^2 / (N-1)
-        Gamma_A = Gamma_A[1:N-1,1:N-1]
-        Z_A = Z_A[:,1:N-1]
+Gamma_A = sqrtGamma_A.^2 / (N-1)
+Gamma_A = Gamma_A[1:N-1,1:N-1]
+Z_A = Z_A[:,1:N-1]
 
-        if debug
-            # EAKF-decomposition
-            @test Z_A * Gamma_A * Z_A' ≈ Pf
-        end
+if debug
+    # EAKF-decomposition
+    @test Z_A * Gamma_A * Z_A' ≈ Pf
+end
 
-        Xap = 1/sqrt(N-1) * Xfp * (U_A * ((sqrt.(eye(N-1) + Sigma_A'*Sigma_A)) \
-                                          (sqrt.(inv(Gamma_A)) * (Z_A' * Xfp))))
+Xap = 1/sqrt(N-1) * Xfp * (U_A * ((sqrt.(eye(N-1) + Sigma_A'*Sigma_A)) \
+                                  (sqrt.(inv(Gamma_A)) * (Z_A' * Xfp))))
 
-        xa = xf + 1/sqrt(N-1) *  Xfp * (U_A * ((eye(N-1) + Sigma_A'*Sigma_A) \
-                                               (Sigma_A * V_A' * (sqrtR \ (y - Hxf)))))
+xa = xf + 1/sqrt(N-1) *  Xfp * (U_A * ((eye(N-1) + Sigma_A'*Sigma_A) \
+                                       (Sigma_A * V_A' * (sqrtR \ (y - Hxf)))))
 
 elseif $method == SEIK
 # SEIK
@@ -408,9 +408,9 @@ ensemble_analysis, sangoma_compact_locfun
 
 # local_ETLK, local_...
 function $(Symbol("local_" * string(method)))(Xf,H,y,diagR,part,selectObs;
-                       display = false,
-                       minweight = 1e-8,
-                       HXf = [])
+                                              display = false,
+                                              minweight = 1e-8,
+                                              HXf = [])
 
     # unique element of partition vector
     p = unique(part);
