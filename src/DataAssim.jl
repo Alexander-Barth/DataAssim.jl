@@ -36,9 +36,8 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 """
         
         function $method(Xf,HXf,y,R,H; debug = false, tolerance=1e-10)
-            #        function $method(Xf,HXf,y,R,H)
-
-            debug = false; tolerance=1e-10; 
+            #function $method(Xf,HXf,y,R,H)
+            #debug = false; tolerance=1e-10;
             tol = tolerance
             
             # ensemble size
