@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/Alexander-Barth/DataAssim.jl.svg?branch=master)](https://travis-ci.org/Alexander-Barth/DataAssim.jl) [![Coverage Status](https://coveralls.io/repos/Alexander-Barth/DataAssim.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/Alexander-Barth/DataAssim.jl?branch=master) [![codecov.io](http://codecov.io/github/Alexander-Barth/DataAssim.jl/coverage.svg?branch=master)](http://codecov.io/github/Alexander-Barth/DataAssim.jl?branch=master)
 
-[![DataAssim](http://pkg.julialang.org/badges/DataAssim_0.4.svg)](http://pkg.julialang.org/?pkg=DataAssim) [![DataAssim](http://pkg.julialang.org/badges/DataAssim_0.5.svg)](http://pkg.julialang.org/?pkg=DataAssim) [![DataAssim](http://pkg.julialang.org/badges/DataAssim_0.6.svg)](http://pkg.julialang.org/?pkg=DataAssim)
+[![DataAssim](http://pkg.julialang.org/badges/DataAssim_0.6.svg)](http://pkg.julialang.org/?pkg=DataAssim)
 
 
 

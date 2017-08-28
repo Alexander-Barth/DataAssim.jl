@@ -1,4 +1,4 @@
-using DataAssim
+import DataAssim
 using Base.Test
 
 # number of elements in the state vector
@@ -41,28 +41,28 @@ methods = [DataAssim.EnSRF, DataAssim.EAKF, DataAssim.ETKF, DataAssim.ETKF2, Dat
 
 for method in methods
     #Xa,xa = method(Xf,H*Xf,y,R; debug=debug, tolerance=tol, H=H)
-    Xa,xa = method(Xf,H*Xf,y,R,H)
-  Xap = Xa - repmat(xa,1,N)
+    Xa,xa = method(Xf,H*Xf,y,R,H; debug=debug, tolerance=tol)
+    Xap = Xa - repmat(xa,1,N)
 
-  # check analysis
-  @test xa ≈ xa_check
+    # check analysis
+    @test xa ≈ xa_check
 
-  # check analysis ensemble mean
-  @test mean(Xa,2) ≈ xa_check
+    # check analysis ensemble mean
+    @test mean(Xa,2) ≈ xa_check
 
-  # check analysis ensemble variance
-  @test (Xap * Xap') / (N-1) ≈ Pa_check
+    # check analysis ensemble variance
+    @test (Xap * Xap') / (N-1) ≈ Pa_check
 end
 
 # local analysis
 
-part = collect(1:n);
+part = collect(1:n)
 
-selectObs(i) = ones(m);
+selectObs(i) = ones(m)
 
-Xag,xa = ETKF2(Xf,H*Xf,y,R,H);
+Xag,xa = DataAssim.ETKF2(Xf,H*Xf,y,R,H)
 # local analysis
-Xal,xal = local_ETKF2(Xf,H,y,diag(R),part,selectObs);
+Xal,xal = DataAssim.local_ETKF2(Xf,H,y,diag(R),part,selectObs)
 
 # check of global is the same as local analysis if all weights are 1
 @test Xag ≈ Xal
