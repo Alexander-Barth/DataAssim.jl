@@ -124,7 +124,6 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                     # ETKF-TTt
                     @test TTt ≈ U_T * ((eye(Ndim)+Sigma_T*Sigma_T') \ U_T')
 
-                    "ETKF-Kalman gain"
                     K2 = 1/sqrt(N-1) * Xfp *
                         (Stilde' * ((Stilde*Stilde'+ eye(m)) \ inv(sqrtR)))
 
