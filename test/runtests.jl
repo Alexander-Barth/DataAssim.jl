@@ -54,6 +54,9 @@ for method in methods
     @test (Xap * Xap') / (N-1) ≈ Pa_check
 end
 
+# check if no error, output is stochastic
+Xa,xa = DataAssim.EnKF(Xf,H*Xf,y,R,H; debug=debug, tolerance=tol)
+
 # local analysis
 
 part = collect(1:n)
@@ -70,6 +73,7 @@ Xal,xal = DataAssim.local_ETKF2(Xf,H,y,diag(R),part,selectObs)
 # test compact function
 
 @test DataAssim.compact_locfun(0) ≈ 1 atol=tol
+# reference value from octave code
+@test DataAssim.compact_locfun(1.5) ≈ 19/1152 atol=tol
 @test DataAssim.compact_locfun(2) ≈ 0 atol=tol
 @test DataAssim.compact_locfun(3) ≈ 0 atol=tol
-

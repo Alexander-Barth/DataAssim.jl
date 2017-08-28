@@ -6,7 +6,7 @@ using Base.Test
 
 export compact_locfun
 
-for method = [:EnSRF, :EAKF, :ETKF, :ETKF2, :SEIK, :ESTKF, :serialEnSRF]
+for method = [:EnSRF, :EAKF, :ETKF, :ETKF2, :SEIK, :ESTKF, :serialEnSRF, :EnKF]
 
     @eval begin
         """
@@ -14,7 +14,7 @@ for method = [:EnSRF, :EAKF, :ETKF, :ETKF2, :SEIK, :ESTKF, :serialEnSRF]
     
     Computes analysis ensemble Xa based on forecast ensemble Xf
     and observations y using various ensemble scheme.
-    The function name "ensemble_analysis" can be EnSRF, EAKF, ETKF, SEIK, ESTKF or EnKF.
+    The function name "ensemble_analysis" can be EnSRF, EAKF, ETKF, SEIK, ESTKF, serialEnSRF or EnKF.
 
 # Input arguments:
 * `Xf`: forecast ensemble (n x N)
@@ -501,7 +501,7 @@ function compact_locfun(r)
     elseif 1 < r <= 2;
         return ((((r/12. - 1/2) * r + 5/8) * r + 5/3) * r - 5) * r + 4 - 2./(3*r);
     else
-        return 0.
+        return zero(r)
     end
 end
 
