@@ -6,9 +6,8 @@
 [![Coverage Status](https://coveralls.io/repos/Alexander-Barth/DataAssim.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/Alexander-Barth/DataAssim.jl?branch=master)
 [![codecov.io](http://codecov.io/github/Alexander-Barth/DataAssim.jl/coverage.svg?branch=master)](http://codecov.io/github/Alexander-Barth/DataAssim.jl?branch=master)
 
-[![documentation stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexander-barth.github.io/DataAssim.jl/stable/)
+<!--[![documentation stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexander-barth.github.io/DataAssim.jl/stable/)-->
 [![documentation latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexander-barth.github.io/DataAssim.jl/latest/)
-
 [![DataAssim](http://pkg.julialang.org/badges/DataAssim_0.6.svg)](http://pkg.julialang.org/?pkg=DataAssim)
 
 
