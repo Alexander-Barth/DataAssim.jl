@@ -88,7 +88,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                     
                     # H[[iobs],:] is necessary instead of H[iobs,:] to make it a row vector
                     Hloc = H[[iobs],:]
-                    yloc = y[iobs]
+                    yloc = y[[iobs]]
 
                     Sloc = Hloc*Xfp
                     Hxfloc = Hloc*xf
@@ -97,6 +97,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                     Floc = (Sloc*Sloc')[1] + (N-1)*R[iobs, iobs] 
 
                     Kloc = Xfp*Sloc' / Floc
+
                     xa = xf + Kloc * (yloc - Hxfloc)
                     alpha = one / (one + sqrt( (N-1)*R[iobs,iobs]/Floc) )
                     Xap = Xfp - alpha * Kloc * Sloc
@@ -106,7 +107,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 end
             elseif $method == ETKF
                 # ETKF with decomposition of Stilde
-                sqrtR = sqrtm(R)
+                sqrtR = sqrt(R)
                 Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
 
                 # "economy size" SVD decomposition
@@ -196,7 +197,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 #   Sigma_T = Diagonal(Sigma_T)
 
                 #   T = U_T * (sqrt(Sigma_T) \ U_T')
-                #   #T = sqrtm(inv(invTTt))
+                #   #T = sqrt(inv(invTTt))
 
                 #   if debug
                 #     @test T*T,inv(invTTt),"ETKF3-sym. square root",tol)
@@ -207,7 +208,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 
             elseif $method == EAKF
                 # EAKF
-                sqrtR = sqrtm(R)
+                sqrtR = sqrt(R)
 
                 Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
 
@@ -318,13 +319,13 @@ if debug
     @test Pf ≈ Pf2
 end
 
-invTTt = (N-1)*eye(N-1) + HL' * (R \ HL)
+invTTt = (N-1)*I + HL' * (R \ HL)
 
 Sigma_E,U_E = eig(invTTt)
 Sigma_E = Diagonal(Sigma_E)
 
 T = U_E * (sqrt.(Sigma_E) \ U_E')
-#T = sqrtm(inv(invTTt))
+#T = sqrt(inv(invTTt))
 
 if debug
     # ESTKF-sym. square root
@@ -335,7 +336,7 @@ Xap = sqrt(N-1) * L*T * A'
 xa = xf + L * (U_E * (inv(Sigma_E) * U_E' * (HL' * (R \ (y - Hxf)))))
 elseif $method == EnKF
 # EnKF
-sqrtR = sqrtm(R)
+sqrtR = sqrt(R)
 
 # perturbation of observations
 Yp = sqrtR * randn(m,N)
@@ -347,7 +348,7 @@ Sigma_F = Diagonal(Sigma_F)
 G_F,Gamma_F,Z_F = svd(S'*(U_F*inv(Sigma_F)))
 
 # unclear in manuscript
-#Xap = Xfp * G_F * sqrt(eye(N)-Gamma_F*Gamma_F') * G_F'
+#Xap = Xfp * G_F * sqrt(I - Gamma_F*Gamma_F') * G_F'
 
 Xa = Xf + Xfp * (S' * (U_F * (inv(Sigma_F)^2 * (U_F' * (Y-HXf)))))
 
@@ -395,18 +396,17 @@ method: method is one analysis schemes implemented sangoma_ensemble_analysis
   (except for EnSRF)
 
 Optional inputs:
-'display', display: if true, then display progress (false is the default)
-'minweight', minweight: analysis is performed using observations for which
+* display: if true, then display progress (false is the default)
+* minweight: analysis is performed using observations for which
    weights is larger than minweight. (default 1e-8)
-'HXf', HXf: if non empty, then it is the product H Xf. In this case, H is not
+* HXf: if non empty, then it is the product H Xf. In this case, H is not
    used
 
 Output:
-Xa: the analysis ensemble (n x N)
-xa: the analysis ensemble mean (n x 1)
+`Xa`: the analysis ensemble (n x N)
+`xa`: the analysis ensemble mean (n x 1)
 
-See also:
-ensemble_analysis, sangoma_compact_locfun
+See also: compact_locfun
 """
 function $(Symbol("local_" * string(method)))(Xf,H,y,diagR,part,selectObs;
                                               display = false,
@@ -430,11 +430,11 @@ function $(Symbol("local_" * string(method)))(Xf,H,y,diagR,part,selectObs;
             @printf("zone %d out of %d\n",i,length(p));
         end
 
-        sel = find(part .== p[i]);
+        sel = findall(part .== p[i]);
         weight = selectObs(sel[1]);
 
         # restrict to local observations where weight exceeds minweight
-        loc = find(weight .> minweight);
+        loc = findall(weight .> minweight);
         HXfloc = HXf[loc,:];
         Rloc = Diagonal(diagR[loc] ./ weight[loc]);
         yloc = y[loc];
@@ -455,7 +455,6 @@ end # for method ...
 
 
 function householder(w)
-
     n = length(w)-1
 
     H = zeros(n+1,n)
@@ -463,8 +462,7 @@ function householder(w)
     w2 = copy(w)
     w2[n+1] = w2[n+1] + sign(w[n+1])
 
-
-    H = [eye(n); zeros(1,n)] - 1/(abs(w[n+1])+1) *  w2 * w[1:n]'
+    H = [I; zeros(1,n)] - 1/(abs(w[n+1])+1) *  w2 * w[1:n]'
 
     return H
 end

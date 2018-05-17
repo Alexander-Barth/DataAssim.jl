@@ -1,5 +1,6 @@
 import DataAssim
 using Test
+using LinearAlgebra
 
 # number of elements in the state vector
 n = 10
