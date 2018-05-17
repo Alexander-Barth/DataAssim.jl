@@ -1,5 +1,5 @@
 import DataAssim
-using Base.Test
+using Test
 
 # number of elements in the state vector
 n = 10
@@ -24,7 +24,7 @@ y = 1:m
 Xf = reshape(sin.(3*(1:(n*N))),n,N)
 H = reshape(1:(m*n),m,n)
 
-R = 2*eye(m,m)
+R = Matrix(2*I,m,m)
 
 xf = mean(Xf, dims=2)
 Xfp = Xf .- xf
