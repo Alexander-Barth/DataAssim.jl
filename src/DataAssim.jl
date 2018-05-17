@@ -2,7 +2,9 @@
 
 
 module DataAssim
-using Base.Test
+using Test
+using LinearAlgebra
+using Printf
 
 export compact_locfun
 
@@ -33,8 +35,7 @@ for method = [:EnSRF, :EAKF, :ETKF, :ETKF2, :SEIK, :ESTKF, :serialEnSRF, :EnKF]
 
 Notations follows:
 Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
-"""
-        
+"""       
         function $method(Xf,HXf,y,R,H; debug = false, tolerance=1e-10)
             #function $method(Xf,HXf,y,R,H)
             #debug = false; tolerance=1e-10;
@@ -46,11 +47,11 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
             # number of observations
             m = size(y,1)
             
-            xf = mean(Xf,2)[:,1]
-            Xfp = Xf - repmat(xf,1,N)
+            xf = mean(Xf,dims = 2)[:,1]
+            Xfp = Xf - repeat(xf, inner = (1,N))
             
-            Hxf = mean(HXf,2)[:,1]
-            S = HXf - repmat(Hxf,1,N)
+            Hxf = mean(HXf, dims = 2)[:,1]
+            S = HXf - repeat(Hxf, inner = (1,N))
 
             F = S*S' + (N-1) * R
 
@@ -69,14 +70,14 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 Lambda_S = Diagonal(e.values)
                 
                 #Lambda_S,Gamma_S = eig(F)
-                #Lambda_S = diagm(Lambda_S)
+                #Lambda_S = Diagonal(Lambda_S)
                 
                 X_S = S'*Gamma_S * sqrt.(inv(Lambda_S))
                 U_S,Sigma_S,Z_S = svd(X_S)
 
-                Sigma_S = diagm(Sigma_S)
+                Sigma_S = Diagonal(Sigma_S)
 
-                Xap = Xfp * (U_S * (sqrt.(eye(N)-Sigma_S*Sigma_S') * U_S'))
+                Xap = Xfp * (U_S * (sqrt.(I - Sigma_S*Sigma_S') * U_S'))
                 xa = xf + Xfp * (S' * (Gamma_S * (Lambda_S \ (Gamma_S' * (y - Hxf)))))
 
             elseif $method == serialEnSRF
@@ -87,7 +88,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                     
                     # H[[iobs],:] is necessary instead of H[iobs,:] to make it a row vector
                     Hloc = H[[iobs],:]
-                    yloc = y[iobs]
+                    yloc = y[[iobs]]
 
                     Sloc = Hloc*Xfp
                     Hxfloc = Hloc*xf
@@ -96,6 +97,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                     Floc = (Sloc*Sloc')[1] + (N-1)*R[iobs, iobs] 
 
                     Kloc = Xfp*Sloc' / Floc
+
                     xa = xf + Kloc * (yloc - Hxfloc)
                     alpha = one / (one + sqrt( (N-1)*R[iobs,iobs]/Floc) )
                     Xap = Xfp - alpha * Kloc * Sloc
@@ -105,12 +107,13 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 end
             elseif $method == ETKF
                 # ETKF with decomposition of Stilde
-                sqrtR = sqrtm(R)
+                sqrtR = sqrt(R)
                 Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
 
                 # "economy size" SVD decomposition
-                U_T,Sigma_T,V_T = svd(Stilde')
-                Sigma_T = diagm(Sigma_T)
+                #U_T,Sigma_T,V_T = svd(Stilde')
+                U_T,Sigma_T,V_T = svd(copy(Stilde'))
+                Sigma_T = Diagonal(Sigma_T)
 
                 if size(Sigma_T,2) > N
                     Sigma_T = Sigma_T(:,1:N)
@@ -118,27 +121,27 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 end
                 Ndim = size(Sigma_T,1)
 
-                TTt = eye(N) - S'*(F\S)
+                TTt = I - S'*(F\S)
 
                 if debug
                     # ETKF-TTt
-                    @test TTt ≈ U_T * ((eye(Ndim)+Sigma_T*Sigma_T') \ U_T')
+                    @test TTt ≈ U_T * ((I + Sigma_T*Sigma_T') \ U_T')
 
                     K2 = 1/sqrt(N-1) * Xfp *
-                        (Stilde' * ((Stilde*Stilde'+ eye(m)) \ inv(sqrtR)))
+                        (Stilde' * ((Stilde*Stilde'+ I) \ inv(sqrtR)))
 
                     @test K ≈ K2
                 end
 
-                Xap = Xfp * (U_T * (sqrt.(eye(Ndim)+Sigma_T*Sigma_T') \ U_T'))
-                xa = xf + 1/sqrt(N-1) *  Xfp * (U_T * ((eye(Ndim)+Sigma_T'*Sigma_T) \
+                Xap = Xfp * (U_T * (sqrt.(I + Sigma_T*Sigma_T') \ U_T'))
+                xa = xf + 1/sqrt(N-1) *  Xfp * (U_T * ((I + Sigma_T'*Sigma_T) \
                                                        (Sigma_T * V_T' * (sqrtR \ (y - Hxf)))))
 
             elseif $method == ETKF2
                 # ETKF with square-root of invTTt (e.g. Hunt et al., 2007)
 
                 invR_S = R \ S
-                invTTt = Symmetric((N-1) * eye(N) + S' * invR_S)
+                invTTt = Symmetric((N-1) * I + S' * invR_S)
 
                 # eig is symmetric, thus the type of its eigenvalues are known
 
@@ -191,10 +194,10 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 #   invTTt = (N-1)*eye(N) + HL' * (R \ HL)
 
                 #   Sigma_T,U_T = eig(invTTt)
-                #   Sigma_T = diagm(Sigma_T)
+                #   Sigma_T = Diagonal(Sigma_T)
 
                 #   T = U_T * (sqrt(Sigma_T) \ U_T')
-                #   #T = sqrtm(inv(invTTt))
+                #   #T = sqrt(inv(invTTt))
 
                 #   if debug
                 #     @test T*T,inv(invTTt),"ETKF3-sym. square root",tol)
@@ -205,13 +208,17 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 
             elseif $method == EAKF
                 # EAKF
-                sqrtR = sqrtm(R)
+                sqrtR = sqrt(R)
 
                 Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
 
                 # Sigma_A should have the size (N-1) x (N-1)
-U_A,Sigma_A,V_A = svd(Stilde')
-Sigma_A = diagm(Sigma_A)
+
+# issue
+# https://github.com/JuliaLang/julia/issues/27132
+
+U_A,Sigma_A,V_A = svd(copy(Stilde'))
+Sigma_A = Diagonal(Sigma_A)
 
 if debug
     # last singular should be zero
@@ -227,7 +234,7 @@ V_A = V_A[:,1:N-1]
 
 #[Z_A,Gamma_A] = eig(Pf)
 Z_A,sqrtGamma_A,dummy = svd(Xfp)
-sqrtGamma_A = diagm(sqrtGamma_A)
+sqrtGamma_A = Diagonal(sqrtGamma_A)
 
 if debug
     # last eigenvalue should be zero
@@ -243,17 +250,16 @@ if debug
     @test Z_A * Gamma_A * Z_A' ≈ Pf
 end
 
-Xap = 1/sqrt(N-1) * Xfp * (U_A * ((sqrt.(eye(N-1) + Sigma_A'*Sigma_A)) \
+Xap = 1/sqrt(N-1) * Xfp * (U_A * ((sqrt.(I + Sigma_A'*Sigma_A)) \
                                   (sqrt.(inv(Gamma_A)) * (Z_A' * Xfp))))
 
-xa = xf + 1/sqrt(N-1) *  Xfp * (U_A * ((eye(N-1) + Sigma_A'*Sigma_A) \
+xa = xf + 1/sqrt(N-1) *  Xfp * (U_A * ((I + Sigma_A'*Sigma_A) \
                                        (Sigma_A * V_A' * (sqrtR \ (y - Hxf)))))
 
 elseif $method == SEIK
 # SEIK
 
-A = zeros(N,N-1)
-A[1:N-1,1:N-1] = eye(N-1)
+A = [I; zeros(N-1)']
 A = A - ones(N,N-1)/N
 
 L = Xf*A
@@ -313,13 +319,13 @@ if debug
     @test Pf ≈ Pf2
 end
 
-invTTt = (N-1)*eye(N-1) + HL' * (R \ HL)
+invTTt = (N-1)*I + HL' * (R \ HL)
 
 Sigma_E,U_E = eig(invTTt)
-Sigma_E = diagm(Sigma_E)
+Sigma_E = Diagonal(Sigma_E)
 
 T = U_E * (sqrt.(Sigma_E) \ U_E')
-#T = sqrtm(inv(invTTt))
+#T = sqrt(inv(invTTt))
 
 if debug
     # ESTKF-sym. square root
@@ -330,27 +336,27 @@ Xap = sqrt(N-1) * L*T * A'
 xa = xf + L * (U_E * (inv(Sigma_E) * U_E' * (HL' * (R \ (y - Hxf)))))
 elseif $method == EnKF
 # EnKF
-sqrtR = sqrtm(R)
+sqrtR = sqrt(R)
 
 # perturbation of observations
 Yp = sqrtR * randn(m,N)
-Y = Yp + repmat(y,1,N)
+Y = Yp + repeat(y,inner=(1,N))
 
 U_F,Sigma_F,V_F = svd(S + Yp)
-Sigma_F = diagm(Sigma_F)
+Sigma_F = Diagonal(Sigma_F)
 
 G_F,Gamma_F,Z_F = svd(S'*(U_F*inv(Sigma_F)))
 
 # unclear in manuscript
-#Xap = Xfp * G_F * sqrt(eye(N)-Gamma_F*Gamma_F') * G_F'
+#Xap = Xfp * G_F * sqrt(I - Gamma_F*Gamma_F') * G_F'
 
 Xa = Xf + Xfp * (S' * (U_F * (inv(Sigma_F)^2 * (U_F' * (Y-HXf)))))
 
-xa = mean(Xa,2)
-Xap = Xa - repmat(xa,1,N)
+xa = mean(Xa, dims = 2)
+Xap = Xa - repeat(xa,inner=(1,N))
 end
 
-Xa = Xap + repmat(xa,1,N)
+Xa = Xap + repeat(xa,inner=(1,N))
 
 return Xa,xa
 
@@ -390,21 +396,18 @@ method: method is one analysis schemes implemented sangoma_ensemble_analysis
   (except for EnSRF)
 
 Optional inputs:
-'display', display: if true, then display progress (false is the default)
-'minweight', minweight: analysis is performed using observations for which
+* display: if true, then display progress (false is the default)
+* minweight: analysis is performed using observations for which
    weights is larger than minweight. (default 1e-8)
-'HXf', HXf: if non empty, then it is the product H Xf. In this case, H is not
+* HXf: if non empty, then it is the product H Xf. In this case, H is not
    used
 
 Output:
-Xa: the analysis ensemble (n x N)
-xa: the analysis ensemble mean (n x 1)
+`Xa`: the analysis ensemble (n x N)
+`xa`: the analysis ensemble mean (n x 1)
 
-See also:
-ensemble_analysis, sangoma_compact_locfun
+See also: compact_locfun
 """
-
-# local_ETLK, local_...
 function $(Symbol("local_" * string(method)))(Xf,H,y,diagR,part,selectObs;
                                               display = false,
                                               minweight = 1e-8,
@@ -427,13 +430,13 @@ function $(Symbol("local_" * string(method)))(Xf,H,y,diagR,part,selectObs;
             @printf("zone %d out of %d\n",i,length(p));
         end
 
-        sel = find(part .== p[i]);
+        sel = findall(part .== p[i]);
         weight = selectObs(sel[1]);
 
         # restrict to local observations where weight exceeds minweight
-        loc = find(weight .> minweight);
+        loc = findall(weight .> minweight);
         HXfloc = HXf[loc,:];
-        Rloc = diagm(diagR[loc] ./ weight[loc]);
+        Rloc = Diagonal(diagR[loc] ./ weight[loc]);
         yloc = y[loc];
 
         Xa[sel,:],xa[sel] = $method(Xf[sel,:],HXfloc,
@@ -452,7 +455,6 @@ end # for method ...
 
 
 function householder(w)
-
     n = length(w)-1
 
     H = zeros(n+1,n)
@@ -460,8 +462,7 @@ function householder(w)
     w2 = copy(w)
     w2[n+1] = w2[n+1] + sign(w[n+1])
 
-
-    H = [eye(n); zeros(1,n)] - 1/(abs(w[n+1])+1) *  w2 * w[1:n]'
+    H = [I; zeros(1,n)] - 1/(abs(w[n+1])+1) *  w2 * w[1:n]'
 
     return H
 end
@@ -498,7 +499,7 @@ function compact_locfun(r)
     if r <= 1
         return (((-r/4. + 1/2) * r + 5/8) * r - 5/3) * r^2 + 1
     elseif 1 < r <= 2;
-        return ((((r/12. - 1/2) * r + 5/8) * r + 5/3) * r - 5) * r + 4 - 2./(3*r);
+        return ((((r/12. - 1/2) * r + 5/8) * r + 5/3) * r - 5) * r + 4 - 2/(3*r);
     else
         return zero(r)
     end
