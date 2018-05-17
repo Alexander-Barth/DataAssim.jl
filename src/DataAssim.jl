@@ -70,12 +70,12 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 Lambda_S = Diagonal(e.values)
                 
                 #Lambda_S,Gamma_S = eig(F)
-                #Lambda_S = diagm(Lambda_S)
+                #Lambda_S = Diagonal(Lambda_S)
                 
                 X_S = S'*Gamma_S * sqrt.(inv(Lambda_S))
                 U_S,Sigma_S,Z_S = svd(X_S)
 
-                Sigma_S = diagm(Sigma_S)
+                Sigma_S = Diagonal(Sigma_S)
 
                 Xap = Xfp * (U_S * (sqrt.(I - Sigma_S*Sigma_S') * U_S'))
                 xa = xf + Xfp * (S' * (Gamma_S * (Lambda_S \ (Gamma_S' * (y - Hxf)))))
@@ -112,7 +112,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 # "economy size" SVD decomposition
                 #U_T,Sigma_T,V_T = svd(Stilde')
                 U_T,Sigma_T,V_T = svd(copy(Stilde'))
-                Sigma_T = diagm(Sigma_T)
+                Sigma_T = Diagonal(Sigma_T)
 
                 if size(Sigma_T,2) > N
                     Sigma_T = Sigma_T(:,1:N)
@@ -193,7 +193,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 #   invTTt = (N-1)*eye(N) + HL' * (R \ HL)
 
                 #   Sigma_T,U_T = eig(invTTt)
-                #   Sigma_T = diagm(Sigma_T)
+                #   Sigma_T = Diagonal(Sigma_T)
 
                 #   T = U_T * (sqrt(Sigma_T) \ U_T')
                 #   #T = sqrtm(inv(invTTt))
@@ -217,7 +217,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 # https://github.com/JuliaLang/julia/issues/27132
 
 U_A,Sigma_A,V_A = svd(copy(Stilde'))
-Sigma_A = diagm(Sigma_A)
+Sigma_A = Diagonal(Sigma_A)
 
 if debug
     # last singular should be zero
@@ -233,7 +233,7 @@ V_A = V_A[:,1:N-1]
 
 #[Z_A,Gamma_A] = eig(Pf)
 Z_A,sqrtGamma_A,dummy = svd(Xfp)
-sqrtGamma_A = diagm(sqrtGamma_A)
+sqrtGamma_A = Diagonal(sqrtGamma_A)
 
 if debug
     # last eigenvalue should be zero
@@ -321,7 +321,7 @@ end
 invTTt = (N-1)*eye(N-1) + HL' * (R \ HL)
 
 Sigma_E,U_E = eig(invTTt)
-Sigma_E = diagm(Sigma_E)
+Sigma_E = Diagonal(Sigma_E)
 
 T = U_E * (sqrt.(Sigma_E) \ U_E')
 #T = sqrtm(inv(invTTt))
@@ -342,7 +342,7 @@ Yp = sqrtR * randn(m,N)
 Y = Yp + repeat(y,inner=(1,N))
 
 U_F,Sigma_F,V_F = svd(S + Yp)
-Sigma_F = diagm(Sigma_F)
+Sigma_F = Diagonal(Sigma_F)
 
 G_F,Gamma_F,Z_F = svd(S'*(U_F*inv(Sigma_F)))
 
@@ -436,7 +436,7 @@ function $(Symbol("local_" * string(method)))(Xf,H,y,diagR,part,selectObs;
         # restrict to local observations where weight exceeds minweight
         loc = find(weight .> minweight);
         HXfloc = HXf[loc,:];
-        Rloc = diagm(diagR[loc] ./ weight[loc]);
+        Rloc = Diagonal(diagR[loc] ./ weight[loc]);
         yloc = y[loc];
 
         Xa[sel,:],xa[sel] = $method(Xf[sel,:],HXfloc,
