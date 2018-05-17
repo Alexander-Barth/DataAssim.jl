@@ -339,7 +339,7 @@ sqrtR = sqrtm(R)
 
 # perturbation of observations
 Yp = sqrtR * randn(m,N)
-Y = Yp + repmat(y,1,N)
+Y = Yp + repeat(y,inner=(1,N))
 
 U_F,Sigma_F,V_F = svd(S + Yp)
 Sigma_F = diagm(Sigma_F)
@@ -352,10 +352,10 @@ G_F,Gamma_F,Z_F = svd(S'*(U_F*inv(Sigma_F)))
 Xa = Xf + Xfp * (S' * (U_F * (inv(Sigma_F)^2 * (U_F' * (Y-HXf)))))
 
 xa = mean(Xa,2)
-Xap = Xa - repmat(xa,1,N)
+Xap = Xa - repeat(xa,inner=(1,N))
 end
 
-Xa = Xap + repmat(xa,1,N)
+Xa = Xap + repeat(xa,inner=(1,N))
 
 return Xa,xa
 
@@ -501,7 +501,7 @@ function compact_locfun(r)
     if r <= 1
         return (((-r/4. + 1/2) * r + 5/8) * r - 5/3) * r^2 + 1
     elseif 1 < r <= 2;
-        return ((((r/12. - 1/2) * r + 5/8) * r + 5/3) * r - 5) * r + 4 - 2./(3*r);
+        return ((((r/12. - 1/2) * r + 5/8) * r + 5/3) * r - 5) * r + 4 - 2/(3*r);
     else
         return zero(r)
     end
