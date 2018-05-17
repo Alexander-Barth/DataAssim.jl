@@ -2,7 +2,9 @@
 
 
 module DataAssim
-using Base.Test
+using Test
+using LinearAlgebra
+using Printf
 
 export compact_locfun
 
@@ -33,8 +35,7 @@ for method = [:EnSRF, :EAKF, :ETKF, :ETKF2, :SEIK, :ESTKF, :serialEnSRF, :EnKF]
 
 Notations follows:
 Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
-"""
-        
+"""       
         function $method(Xf,HXf,y,R,H; debug = false, tolerance=1e-10)
             #function $method(Xf,HXf,y,R,H)
             #debug = false; tolerance=1e-10;
@@ -46,11 +47,11 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
             # number of observations
             m = size(y,1)
             
-            xf = mean(Xf,2)[:,1]
-            Xfp = Xf - repmat(xf,1,N)
+            xf = mean(Xf,dims = 2)[:,1]
+            Xfp = Xf - repeat(xf, inner = (1,N))
             
             Hxf = mean(HXf,2)[:,1]
-            S = HXf - repmat(Hxf,1,N)
+            S = HXf - repeat(Hxf, inner = (1,N))
 
             F = S*S' + (N-1) * R
 
@@ -76,7 +77,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 
                 Sigma_S = diagm(Sigma_S)
 
-                Xap = Xfp * (U_S * (sqrt.(eye(N)-Sigma_S*Sigma_S') * U_S'))
+                Xap = Xfp * (U_S * (sqrt.(I - Sigma_S*Sigma_S') * U_S'))
                 xa = xf + Xfp * (S' * (Gamma_S * (Lambda_S \ (Gamma_S' * (y - Hxf)))))
 
             elseif $method == serialEnSRF
@@ -109,7 +110,8 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
 
                 # "economy size" SVD decomposition
-                U_T,Sigma_T,V_T = svd(Stilde')
+                #U_T,Sigma_T,V_T = svd(Stilde')
+                U_T,Sigma_T,V_T = svd(copy(Stilde'))
                 Sigma_T = diagm(Sigma_T)
 
                 if size(Sigma_T,2) > N
@@ -118,27 +120,27 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 end
                 Ndim = size(Sigma_T,1)
 
-                TTt = eye(N) - S'*(F\S)
+                TTt = I - S'*(F\S)
 
                 if debug
                     # ETKF-TTt
-                    @test TTt ≈ U_T * ((eye(Ndim)+Sigma_T*Sigma_T') \ U_T')
+                    @test TTt ≈ U_T * ((I + Sigma_T*Sigma_T') \ U_T')
 
                     K2 = 1/sqrt(N-1) * Xfp *
-                        (Stilde' * ((Stilde*Stilde'+ eye(m)) \ inv(sqrtR)))
+                        (Stilde' * ((Stilde*Stilde'+ I) \ inv(sqrtR)))
 
                     @test K ≈ K2
                 end
 
-                Xap = Xfp * (U_T * (sqrt.(eye(Ndim)+Sigma_T*Sigma_T') \ U_T'))
-                xa = xf + 1/sqrt(N-1) *  Xfp * (U_T * ((eye(Ndim)+Sigma_T'*Sigma_T) \
+                Xap = Xfp * (U_T * (sqrt.(I + Sigma_T*Sigma_T') \ U_T'))
+                xa = xf + 1/sqrt(N-1) *  Xfp * (U_T * ((I + Sigma_T'*Sigma_T) \
                                                        (Sigma_T * V_T' * (sqrtR \ (y - Hxf)))))
 
             elseif $method == ETKF2
                 # ETKF with square-root of invTTt (e.g. Hunt et al., 2007)
 
                 invR_S = R \ S
-                invTTt = Symmetric((N-1) * eye(N) + S' * invR_S)
+                invTTt = Symmetric((N-1) * I + S' * invR_S)
 
                 # eig is symmetric, thus the type of its eigenvalues are known
 
@@ -210,7 +212,11 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
 
                 # Sigma_A should have the size (N-1) x (N-1)
-U_A,Sigma_A,V_A = svd(Stilde')
+
+# issue
+# https://github.com/JuliaLang/julia/issues/27132
+
+U_A,Sigma_A,V_A = svd(copy(Stilde'))
 Sigma_A = diagm(Sigma_A)
 
 if debug
@@ -243,17 +249,16 @@ if debug
     @test Z_A * Gamma_A * Z_A' ≈ Pf
 end
 
-Xap = 1/sqrt(N-1) * Xfp * (U_A * ((sqrt.(eye(N-1) + Sigma_A'*Sigma_A)) \
+Xap = 1/sqrt(N-1) * Xfp * (U_A * ((sqrt.(I + Sigma_A'*Sigma_A)) \
                                   (sqrt.(inv(Gamma_A)) * (Z_A' * Xfp))))
 
-xa = xf + 1/sqrt(N-1) *  Xfp * (U_A * ((eye(N-1) + Sigma_A'*Sigma_A) \
+xa = xf + 1/sqrt(N-1) *  Xfp * (U_A * ((I + Sigma_A'*Sigma_A) \
                                        (Sigma_A * V_A' * (sqrtR \ (y - Hxf)))))
 
 elseif $method == SEIK
 # SEIK
 
-A = zeros(N,N-1)
-A[1:N-1,1:N-1] = eye(N-1)
+A = [I; zeros(N-1)']
 A = A - ones(N,N-1)/N
 
 L = Xf*A
@@ -403,8 +408,6 @@ xa: the analysis ensemble mean (n x 1)
 See also:
 ensemble_analysis, sangoma_compact_locfun
 """
-
-# local_ETLK, local_...
 function $(Symbol("local_" * string(method)))(Xf,H,y,diagR,part,selectObs;
                                               display = false,
                                               minweight = 1e-8,

@@ -26,8 +26,8 @@ H = reshape(1:(m*n),m,n)
 
 R = 2*eye(m,m)
 
-xf = mean(Xf,2)
-Xfp = Xf - repmat(xf,1,N)
+xf = mean(Xf, dims=2)
+Xfp = Xf .- xf
 
 
 Pf = (Xfp * Xfp') / (N-1)
@@ -42,13 +42,13 @@ methods = [DataAssim.EnSRF, DataAssim.EAKF, DataAssim.ETKF, DataAssim.ETKF2, Dat
 for method in methods
     #Xa,xa = method(Xf,H*Xf,y,R; debug=debug, tolerance=tol, H=H)
     Xa,xa = method(Xf,H*Xf,y,R,H; debug=debug, tolerance=tol)
-    Xap = Xa - repmat(xa,1,N)
+    Xap = Xa .- view(xa,:,1:1)
 
     # check analysis
     @test xa ≈ xa_check
 
     # check analysis ensemble mean
-    @test mean(Xa,2) ≈ xa_check
+    @test mean(Xa, dims = 2) ≈ xa_check
 
     # check analysis ensemble variance
     @test (Xap * Xap') / (N-1) ≈ Pa_check
