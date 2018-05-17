@@ -50,7 +50,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
             xf = mean(Xf,dims = 2)[:,1]
             Xfp = Xf - repeat(xf, inner = (1,N))
             
-            Hxf = mean(HXf,2)[:,1]
+            Hxf = mean(HXf, dims = 2)[:,1]
             S = HXf - repeat(Hxf, inner = (1,N))
 
             F = S*S' + (N-1) * R
@@ -351,7 +351,7 @@ G_F,Gamma_F,Z_F = svd(S'*(U_F*inv(Sigma_F)))
 
 Xa = Xf + Xfp * (S' * (U_F * (inv(Sigma_F)^2 * (U_F' * (Y-HXf)))))
 
-xa = mean(Xa,2)
+xa = mean(Xa, dims = 2)
 Xap = Xa - repeat(xa,inner=(1,N))
 end
 
