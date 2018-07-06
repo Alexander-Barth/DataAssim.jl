@@ -5,6 +5,7 @@ module DataAssim
 using Test
 using LinearAlgebra
 using Printf
+using Statistics
 
 export compact_locfun
 
@@ -65,7 +66,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 
             if $method == EnSRF
                 # EnSRF
-                e = eigfact(Symmetric(F))
+                e = eigen(Symmetric(F))
                 Gamma_S = e.vectors
                 Lambda_S = Diagonal(e.values)
                 
@@ -145,7 +146,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 
                 # eig is symmetric, thus the type of its eigenvalues are known
 
-                e = eigfact(invTTt)
+                e = eigen(invTTt)
                 U_T = e.vectors
                 Sigma_T = Diagonal(e.values)
 
@@ -217,7 +218,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 # issue
 # https://github.com/JuliaLang/julia/issues/27132
 
-U_A,Sigma_A,V_A = svd(copy(Stilde'))
+U_A,Sigma_A,V_A = svd(Stilde')
 Sigma_A = Diagonal(Sigma_A)
 
 if debug
@@ -277,7 +278,7 @@ end
 invTTt = (N-1)*(A'*A) + HL' * (R \ HL)
 TTt = inv(invTTt)
 
-T = chol(inv(invTTt))'
+T = cholesky(inv(invTTt)).U'
 
 if debug
     # SEIK-Cholesky decomposition
@@ -321,7 +322,7 @@ end
 
 invTTt = (N-1)*I + HL' * (R \ HL)
 
-Sigma_E,U_E = eig(invTTt)
+Sigma_E,U_E = eigen(invTTt)
 Sigma_E = Diagonal(Sigma_E)
 
 T = U_E * (sqrt.(Sigma_E) \ U_E')

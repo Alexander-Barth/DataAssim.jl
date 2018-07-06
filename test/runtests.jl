@@ -1,6 +1,7 @@
 import DataAssim
 using Test
 using LinearAlgebra
+using Statistics
 
 # number of elements in the state vector
 n = 10
@@ -42,14 +43,14 @@ methods = [DataAssim.EnSRF, DataAssim.EAKF, DataAssim.ETKF, DataAssim.ETKF2, Dat
 
 for method in methods
     #Xa,xa = method(Xf,H*Xf,y,R; debug=debug, tolerance=tol, H=H)
-    Xa,xa = method(Xf,H*Xf,y,R,H; debug=debug, tolerance=tol)
-    Xap = Xa .- view(xa,:,1:1)
+    Xam,xam = method(Xf,H*Xf,y,R,H; debug=debug, tolerance=tol)
+    Xap = Xam .- view(xam,:,1:1)
 
     # check analysis
-    @test xa ≈ xa_check
+    @test xam ≈ xa_check
 
     # check analysis ensemble mean
-    @test mean(Xa, dims = 2) ≈ xa_check
+    @test mean(Xam, dims = 2) ≈ xa_check
 
     # check analysis ensemble variance
     @test (Xap * Xap') / (N-1) ≈ Pa_check
