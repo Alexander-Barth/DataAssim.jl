@@ -14,8 +14,8 @@ for n=1:nmax+1
         P[:,:,1] = Pi;
     else
         # time integration
-        x[:,n] = model.fun(n-1,x[:,n-1],0);
-        P[:,:,n] = model.tgl(n-1,x[:,n-1],model.tgl(n-1,x[:,n-1],P[:,:,n-1])') + Q;
+        x[:,n] = model_fun(n-1,x[:,n-1],0);
+        P[:,:,n] = model_tgl(n-1,x[:,n-1],model_tgl(n-1,x[:,n-1],P[:,:,n-1])') + Q;
     end
 
     if obsindex <= length(no) && n == no(obsindex)

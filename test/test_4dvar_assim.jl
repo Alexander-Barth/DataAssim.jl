@@ -31,7 +31,7 @@ yo = randn(m,nmax+1);
 # 1 is IC, 2 -> after first time step
 no=[1];
 
-xa = fourDVar(xi,Pi,model,yo,R,H,nmax,no);
+xa = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
 
 #[xa3] = pcg(fun,b,xi);
 
@@ -59,7 +59,7 @@ yo = randn(m,nmax+1);
 yo = [3,7];
 no=[1,2];
 
-xa = fourDVar(xi,Pi,model,yo,R,H,nmax,no);
+xa = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
 
 P = Pi;
 K = P*H'*inv(H*P*H' + R);
@@ -81,11 +81,11 @@ assert(rms(M*xa,xa3(:,end)) < 1e-14)
 # test: one obs at IC, one at next time step (with evolution)
 
 M = [1 -.1; 0.1 1];
-model.fun = @(t,x) M*x;
-model.tgl = @(t,x,dx) M*dx;
-model.adj = @(t,x,dx) M'*dx;
+model_fun = @(t,x) M*x;
+model_tgl = @(t,x,dx) M*dx;
+model_adj = @(t,x,dx) M'*dx;
 
-xa = fourDVar(xi,Pi,model,yo,R,H,nmax,no);
+xa = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
 xa2 = KalmanFilter(xi,Pi,model,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
 assert(rms(M*xa,xa2(:,end)) < 1e-14)
@@ -96,7 +96,7 @@ assert(rms(M*xa,xa2(:,end)) < 1e-14)
 no = [2,5];
 nmax = 10;
 
-xa = fourDVar(xi,Pi,model,yo,R,H,nmax,no);
+xa = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
 xa2 = KalmanFilter(xi,Pi,model,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
 assert( rms(M^(nmax)*xa,xa2(:,end)) < 1e-14)
@@ -113,9 +113,9 @@ m = 1;
 #MT = @(x) x;
 
 M = eye(2,2);
-model.fun = @(t,x) M*x;
-model.tgl = @(t,x,dx) M*dx;
-model.adj = @(t,x,dx) M'*dx;
+model_fun = @(t,x) M*x;
+model_tgl = @(t,x,dx) M*dx;
+model_adj = @(t,x,dx) M'*dx;
 
 H = [1 0];
 xit = [1; 1];
@@ -147,21 +147,21 @@ H = [1 0 0];
 Pi = 3*eye(n);
 Q = zeros(n,n);
 
-# $$$ model.fun = @(t,x) lorenz63(x,dt);
-# $$$ model.tgl = @(t,x,dx) rungekutta4(0,dx,dt,@(t,dx) [  -sigma, sigma,      0; rho-x(3),    -1,  -x(1); x(2),  x(1),  -beta] * dx);
-# $$$ model.adj = @(t,x,dx) rungekutta4(0,dx,dt,@(t,dx) [  -sigma, sigma,      0; rho-x(3),    -1,  -x(1); x(2),  x(1),  -beta]' * dx);
+# $$$ model_fun = @(t,x) lorenz63(x,dt);
+# $$$ model_tgl = @(t,x,dx) rungekutta4(0,dx,dt,@(t,dx) [  -sigma, sigma,      0; rho-x(3),    -1,  -x(1); x(2),  x(1),  -beta] * dx);
+# $$$ model_adj = @(t,x,dx) rungekutta4(0,dx,dt,@(t,dx) [  -sigma, sigma,      0; rho-x(3),    -1,  -x(1); x(2),  x(1),  -beta]' * dx);
 # $$$
 # $$$ check_tgl_adj(model,3,0);
 
 method = '4DVar';
 
-#[xt,xfree,xa,yt,yo,diag] = TwinExperiment(model,xit,Pi,Q,R,H,nmax,no,method);
+#[xt,xfree,xa,yt,yo,diag] = TwinExperiment(model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,no,method);
 
 
 if 0
-model.fun = @(t,x) x + [sigma*(x(2)-x(1)); x(1)*(rho-x(3)) - x(2); x(1)*x(2) - beta * x(3)]*dt;
-model.tgl = @(t,x,dx) dx + [  -sigma, sigma,      0; rho-x(3),    -1,  -x(1); x(2),  x(1),  -beta] * dx*dt;
-model.adj = @(t,x,dx) dx + [  -sigma, sigma,      0; rho-x(3),    -1,  -x(1); x(2),  x(1),  -beta]' * dx*dt;
+model_fun = @(t,x) x + [sigma*(x(2)-x(1)); x(1)*(rho-x(3)) - x(2); x(1)*x(2) - beta * x(3)]*dt;
+model_tgl = @(t,x,dx) dx + [  -sigma, sigma,      0; rho-x(3),    -1,  -x(1); x(2),  x(1),  -beta] * dx*dt;
+model_adj = @(t,x,dx) dx + [  -sigma, sigma,      0; rho-x(3),    -1,  -x(1); x(2),  x(1),  -beta]' * dx*dt;
 check_tgl_adj(model,3,0);
 end
 
@@ -180,7 +180,7 @@ end
 nmax = 100;
 no = 5:nmax;
 method = 'KF';
-[xt,xfree,xa,yt,yo,diag] = TwinExperiment(model,xit,Pi,Q,R,H,nmax,no,method);
+[xt,xfree,xa,yt,yo,diag] = TwinExperiment(model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,no,method);
 
 if 0
 subplot(2,1,1)
