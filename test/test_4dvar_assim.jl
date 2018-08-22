@@ -64,7 +64,7 @@ xa = fourDVar(xi,Pi,model,yo,R,H,nmax,no);
 P = Pi;
 K = P*H'*inv(H*P*H' + R);
 P = P - K*H*P;
-xa2  = xi + K * (yo(:,1) - H*xi);
+xa2  = xi + K * (yo[:,1] - H*xi);
 
 K = P*H'*inv(H*P*H' + R);
 xa2  = xa2 + K * (yo(:,2) - H*xa2);

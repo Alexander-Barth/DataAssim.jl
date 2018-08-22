@@ -8,9 +8,9 @@ obsindex = 1;
 
 for n=1:nmax+1
     if n == 1
-        x(:,1) = xi;
+        x[:,1] = xi;
     else
-        x[:,n] = model.fun(n-1,x(:,n-1),0);
+        x[:,n] = model.fun(n-1,x[:,n-1],0);
     end
     
     if obsindex <= length(no) && n == no(obsindex)
