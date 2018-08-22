@@ -16,22 +16,22 @@ n = length(xit);
 m = size(R,1);
 diag = struct();
 
-% true run
+# true run
 [xt,yt] = FreeRun(model,xit,Q,H,nmax,no);
 
-% add perturbations to IC   
+# add perturbations to IC   
 xi = xit + chol(Pi)*randn(n,1);
 
-% add perturbations to obs
+# add perturbations to obs
 yo = zeros(m,length(no));
 for i=1:length(no)
   yo(:,i) = yt(:,i) + chol(R)*randn(m,1);
 end
 
-% free run
+# free run
 [xfree,yfree] = FreeRun(model,xi,Q,H,nmax,no);
 
-% assimilation
+# assimilation
 
 if strcmp(method,'4DVar')
   [xia,J,Jfun] = fourDVar(xi,Pi,model,yo,R,H,nmax,no,'outerloops',10);
@@ -61,4 +61,4 @@ end
 
 
 
-%plot(xtrue);
+#plot(xtrue);

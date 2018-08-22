@@ -1,5 +1,5 @@
-% nmax: total number of integration of the model
-% x of size n x (nmax+1) 
+# nmax: total number of integration of the model
+# x of size n x (nmax+1) 
 
 function [x,Hx] = FreeRun(model,xi,Q,H,nmax,no)
 
@@ -14,7 +14,7 @@ for n=1:nmax+1
     end
     
     if obsindex <= length(no) && n == no(obsindex)
-      % extract observations
+      # extract observations
       Hx(:,obsindex) = H*x(:,n);        
       obsindex = obsindex +1;
     end
