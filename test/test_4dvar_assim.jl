@@ -4,6 +4,7 @@ using Random
 using DIVAnd
 
 include("fourDVar.jl")
+include("KalmanFilter.jl")
 
 Random.seed!(12343)
 
@@ -32,7 +33,7 @@ yo = randn(m,nmax+1);
 # 1 is IC, 2 -> after first time step
 no=[1];
 
-xa = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
+xa, = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
 
 #[xa3] = pcg(fun,b,xi);
 
@@ -47,20 +48,20 @@ xa2  = xi + K * (yo - H*xi);
 # should be ~0
 @test xa ≈ xa2
 
-#=
-xa3 = KalmanFilter(xi,Pi,model,zeros(size(Pi)),yo,R,H,nmax,no);
+xa3, = KalmanFilter(xi,Pi,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
-rms(xa,xa3)
+@test xa ≈ xa3
+
 
 #-----------------------------------------
 # test: two obs at IC (no evolution)
 
 nmax = 1;
 yo = randn(m,nmax+1);
-yo = [3,7];
-no=[1,2];
+yo = [3 7];
+no = [1,2];
 
-xa = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
+xa, = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
 
 P = Pi;
 K = P*H'*inv(H*P*H' + R);
@@ -71,12 +72,14 @@ K = P*H'*inv(H*P*H' + R);
 xa2  = xa2 + K * (yo(:,2) - H*xa2);
 
 # should be ~0
-assert(rms(xa,xa2) < 1e-14)
+@test xa ≈ xa2 atol=1e-14
 
 
-xa3 = KalmanFilter(xi,Pi,model,zeros(size(Pi)),yo,R,H,nmax,no);
+xa3, = KalmanFilter(xi,Pi,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
-assert(rms(M*xa,xa3(:,end)) < 1e-14)
+@test M*xa ≈ xa3[:,end]  atol=1e-14)
+
+#=
 
 #-----------------------------------------
 # test: one obs at IC, one at next time step (with evolution)
@@ -87,7 +90,7 @@ model_tgl = @(t,x,dx) M*dx;
 model_adj = @(t,x,dx) M'*dx;
 
 xa = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
-xa2 = KalmanFilter(xi,Pi,model,zeros(size(Pi)),yo,R,H,nmax,no);
+xa2 = KalmanFilter(xi,Pi,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
 assert(rms(M*xa,xa2(:,end)) < 1e-14)
 
@@ -98,7 +101,7 @@ no = [2,5];
 nmax = 10;
 
 xa = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
-xa2 = KalmanFilter(xi,Pi,model,zeros(size(Pi)),yo,R,H,nmax,no);
+xa2 = KalmanFilter(xi,Pi,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
 assert( rms(M^(nmax)*xa,xa2(:,end)) < 1e-14)
 

@@ -5,6 +5,7 @@ function FreeRun(model_fun,xi,Q,H,nmax,no)
 
     x = zeros(size(xi,1),nmax+1);
     obsindex = 1;
+    Hx = zeros(size(H,1),length(no))
 
     for n=1:nmax+1
         if n == 1
@@ -61,7 +62,7 @@ function gradient(xi,dx0,x,Pi,model_tgl,model_adj,yo,R,H,nmax,no)
         end
     end
 
-    #grad = inv(Pi)*(xi - x[:,1]) + lambda[:,1];
+    n = nmax+1
     grad = inv(Pi)*(xi - (dx[:,1]+x[:,n])) + lambda[:,1];
     grad = -2 * grad;
 
@@ -79,6 +80,7 @@ function fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no; innerloops
     x = zeros(size(xi,1),nmax+1);
 
     Jfun(xa) = cost2(xi,Pi,model_fun,xa,yo,R,H,nmax,no);
+    J = zeros(outerloops)
 
     for i=1:outerloops
 
@@ -91,13 +93,18 @@ function fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no; innerloops
 
         # dx increment relative to xi
 
-        grad(dx) = gradient(xi,dx,x,Pi,model_tgl,model_adj,yo,R,H,nmax,no);
+        grad(dx) = gradient(xi,dx,x,Pi,model_tgl,model_adj,yo,R,H,nmax,no)[1];
         b = grad(zeros(size(xi)));
-        fun(dx) = b - grad(dx);
+        function fun(dx,fdx)
+            fdx .= b - grad(dx);
+            @show fdx
+        end
+        @show b
+        dxa,cgsuccess,niter = DIVAnd.conjugategradient(fun,b,tol=tol,maxit=innerloops,x0=zeros(size(xi)))
 
-        dxa = DIVAnd.conjugategradient(fun,b,tol=tol,maxit=innerloops,x0=zeros(size(xi)))
-
-        @show sum((fun(dxa)-b).^2)
+        tmp = zeros(size(xi))
+        fun(dxa,tmp)
+        @show sum(tmp.^2)
         #  assert(sum((fun(dxa)-b).^2) < 10*tol^2)
 
         # add increment to dxa
