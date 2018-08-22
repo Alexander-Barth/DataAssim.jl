@@ -1,6 +1,7 @@
 using LinearAlgebra
 using Test
 using Random
+using DIVAnd
 
 include("fourDVar.jl")
 

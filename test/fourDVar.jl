@@ -84,20 +84,20 @@ function fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no; innerloops
 
         # run with non-linear model
         #[x,Hx] = FreeRun(model,xa,[],H,nmax,no);
-        #J(i) = cost(xi,Pi,x,yo,R,Hx);
-        #J(i) = cost(xa,Pi,x,yo,R,Hx);
-        #[J(i),x,Hx] = cost2(xi,Pi,model,xa,yo,R,H,nmax,no);
-        J(i),x,Hx = Jfun(xa);
+        #J[i] = cost(xi,Pi,x,yo,R,Hx);
+        #J[i] = cost(xa,Pi,x,yo,R,Hx);
+        #[J[i],x,Hx] = cost2(xi,Pi,model,xa,yo,R,H,nmax,no);
+        J[i],x,Hx = Jfun(xa);
 
         # dx increment relative to xi
 
-        grad = @(dx) gradient(xi,dx,x,Pi,model_tgl,model_adj,yo,R,H,nmax,no);
+        grad(dx) = gradient(xi,dx,x,Pi,model_tgl,model_adj,yo,R,H,nmax,no);
         b = grad(zeros(size(xi)));
-        fun = @(dx) b - grad(dx);
+        fun(dx) = b - grad(dx);
 
-        [dxa] = conjugategradient(fun,b,'tol',tol,'maxit',innerloops,'x0',zeros(size(xi)));
+        [dxa] = DIVAnd.conjugategradient(fun,b,tol=tol,maxit=innerloops,x0=zeros(size(xi)))
 
-        sum((fun(dxa)-b).^2)
+        @show sum((fun(dxa)-b).^2)
         #  assert(sum((fun(dxa)-b).^2) < 10*tol^2)
 
         # add increment to dxa
