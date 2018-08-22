@@ -185,9 +185,9 @@ method = 'KF';
 if 0
 subplot(2,1,1)
 hold on
-plot(xt(1,:)','b')
-plot(xfree(1,:)','r')
-plot(xa(1,:)','g')
+plot(xt[1,:]','b')
+plot(xfree[1,:]','r')
+plot(xa[1,:]','g')
 legend('true','free','assim');
 subplot(2,1,2)
 plot(diag.J)

@@ -30,7 +30,7 @@ function gradient(xi,dx0,x,Pi,model,yo,R,H,nmax,no)
         lambda[:,n] = model.adj(n,x[:,n],lambda(:,n+1));
 
         if obsindex > 0 && n == no(obsindex)
-            lambda[:,n] = lambda[:,n] + H'*inv(R)*(yo(:,obsindex) - H*(dx[:,n]+x[:,n] ));
+            lambda[:,n] = lambda[:,n] + H'*inv(R)*(yo[:,obsindex] - H*(dx[:,n]+x[:,n] ));
             obsindex = obsindex - 1;
         end
     end

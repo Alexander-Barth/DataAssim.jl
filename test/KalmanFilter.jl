@@ -21,7 +21,7 @@ for n=1:nmax+1
     if obsindex <= length(no) && n == no(obsindex)
         # assimilation
         K = P[:,:,n]*H'*inv(H*P[:,:,n]*H' + R);
-        x[:,n]  = x[:,n] + K * (yo(:,obsindex) - H*x[:,n]);
+        x[:,n]  = x[:,n] + K * (yo[:,obsindex] - H*x[:,n]);
         P[:,:,n] = P[:,:,n] - K*H*P[:,:,n];
 
         obsindex = obsindex + 1;

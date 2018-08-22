@@ -15,7 +15,7 @@ for n=1:nmax+1
     
     if obsindex <= length(no) && n == no(obsindex)
       # extract observations
-      Hx(:,obsindex) = H*x[:,n];        
+      Hx[:,obsindex] = H*x[:,n];        
       obsindex = obsindex +1;
     end
 end
