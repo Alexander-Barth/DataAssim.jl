@@ -35,6 +35,7 @@ yo = randn(m,nmax+1);
 no=[1];
 
 xa, = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
+@inferred fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no)
 
 #[xa3] = pcg(fun,b,xi);
 
@@ -53,6 +54,7 @@ xa3, = KalmanFilter(xi,Pi,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
 @test xa ≈ xa3
 
+@inferred KalmanFilter(xi,Pi,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no)
 
 #-----------------------------------------
 # test: two obs at IC (no evolution)
@@ -133,6 +135,8 @@ no=3:nmax;
 method = "4DVar";
 
 xt,xfree,xa,yt,yo = TwinExperiment(model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,no,method);
+
+@inferred FreeRun(model_fun,xi,Q,H,nmax,no)
 
 #=
 
