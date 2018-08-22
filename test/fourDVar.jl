@@ -55,7 +55,7 @@ function gradient(xi,dx0,x,Pi,model_tgl,model_adj,yo,R,H,nmax,no)
     for n=nmax+1:-1:1
         lambda[:,n] = model_adj(n,x[:,n],lambda[:,n+1]);
 
-        if obsindex > 0 && n == no(obsindex)
+        if obsindex > 0 && n == no[obsindex]
             lambda[:,n] = lambda[:,n] + H'*inv(R)*(yo[:,obsindex] - H*(dx[:,n]+x[:,n] ));
             obsindex = obsindex - 1;
         end

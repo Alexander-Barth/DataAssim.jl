@@ -18,7 +18,7 @@ for n=1:nmax+1
         P[:,:,n] = model_tgl(n-1,x[:,n-1],model_tgl(n-1,x[:,n-1],P[:,:,n-1])') + Q;
     end
 
-    if obsindex <= length(no) && n == no(obsindex)
+    if obsindex <= length(no) && n == no[obsindex]
         # assimilation
         K = P[:,:,n]*H'*inv(H*P[:,:,n]*H' + R);
         x[:,n]  = x[:,n] + K * (yo[:,obsindex] - H*x[:,n]);
