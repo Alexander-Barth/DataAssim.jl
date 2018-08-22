@@ -1,3 +1,29 @@
+# nmax: total number of integration of the model
+# x of size n x (nmax+1)
+
+function FreeRun(model_fun,xi,Q,H,nmax,no)
+
+    x = zeros(size(xi,1),nmax+1);
+    obsindex = 1;
+
+    for n=1:nmax+1
+        if n == 1
+            x[:,1] = xi;
+        else
+            x[:,n] = model_fun(n-1,x[:,n-1],0);
+        end
+
+        if obsindex <= length(no) && n == no(obsindex)
+            # extract observations
+            Hx[:,obsindex] = H*x[:,n];
+            obsindex = obsindex +1;
+        end
+    end
+
+    return x,Hx
+end
+
+
 function cost2(xi,Pi,model,xa,yo,R,H,nmax,no)
 
     x,Hx = FreeRun(model,xa,[],H,nmax,no);
