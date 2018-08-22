@@ -13,7 +13,7 @@ function FreeRun(model_fun,xi,Q,H,nmax,no)
             x[:,n] = model_fun(n-1,x[:,n-1],0);
         end
 
-        if obsindex <= length(no) && n == no(obsindex)
+        if obsindex <= length(no) && n == no[obsindex]
             # extract observations
             Hx[:,obsindex] = H*x[:,n];
             obsindex = obsindex +1;
@@ -24,9 +24,9 @@ function FreeRun(model_fun,xi,Q,H,nmax,no)
 end
 
 
-function cost2(xi,Pi,model,xa,yo,R,H,nmax,no)
+function cost2(xi,Pi,model_fun,xa,yo,R,H,nmax,no)
 
-    x,Hx = FreeRun(model,xa,[],H,nmax,no);
+    x,Hx = FreeRun(model_fun,xa,[],H,nmax,no);
 
     # cost function
     tmp = x[:,1] - xa;
@@ -48,12 +48,12 @@ function gradient(xi,dx0,x,Pi,model_tgl,model_adj,yo,R,H,nmax,no)
     obsindex = length(no);
 
     for n=1:nmax
-        dx(:,n+1) = model_tgl(n,x[:,n],dx[:,n]);
+        dx[:,n+1] = model_tgl(n,x[:,n],dx[:,n]);
     end
 
     lambda = zeros(size(xi,1),nmax+2);
     for n=nmax+1:-1:1
-        lambda[:,n] = model_adj(n,x[:,n],lambda(:,n+1));
+        lambda[:,n] = model_adj(n,x[:,n],lambda[:,n+1]);
 
         if obsindex > 0 && n == no(obsindex)
             lambda[:,n] = lambda[:,n] + H'*inv(R)*(yo[:,obsindex] - H*(dx[:,n]+x[:,n] ));
@@ -78,7 +78,7 @@ function fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no; innerloops
     xa = xi;
     x = zeros(size(xi,1),nmax+1);
 
-    Jfun(xa) = cost2(xi,Pi,model,xa,yo,R,H,nmax,no);
+    Jfun(xa) = cost2(xi,Pi,model_fun,xa,yo,R,H,nmax,no);
 
     for i=1:outerloops
 
@@ -95,7 +95,7 @@ function fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no; innerloops
         b = grad(zeros(size(xi)));
         fun(dx) = b - grad(dx);
 
-        [dxa] = DIVAnd.conjugategradient(fun,b,tol=tol,maxit=innerloops,x0=zeros(size(xi)))
+        dxa = DIVAnd.conjugategradient(fun,b,tol=tol,maxit=innerloops,x0=zeros(size(xi)))
 
         @show sum((fun(dxa)-b).^2)
         #  assert(sum((fun(dxa)-b).^2) < 10*tol^2)
