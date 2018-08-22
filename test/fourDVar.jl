@@ -22,21 +22,21 @@ function gradient(xi,dx0,x,Pi,model,yo,R,H,nmax,no)
     obsindex = length(no);
 
     for n=1:nmax
-        dx(:,n+1) = model.tgl(n,x(:,n),dx(:,n));
+        dx(:,n+1) = model.tgl(n,x[:,n],dx[:,n]);
     end
 
     lambda = zeros(size(xi,1),nmax+2);
     for n=nmax+1:-1:1
-        lambda(:,n) = model.adj(n,x(:,n),lambda(:,n+1));
+        lambda[:,n] = model.adj(n,x[:,n],lambda(:,n+1));
 
         if obsindex > 0 && n == no(obsindex)
-            lambda(:,n) = lambda(:,n) + H'*inv(R)*(yo(:,obsindex) - H*(dx(:,n)+x(:,n) ));
+            lambda[:,n] = lambda[:,n] + H'*inv(R)*(yo(:,obsindex) - H*(dx[:,n]+x[:,n] ));
             obsindex = obsindex - 1;
         end
     end
 
     #grad = inv(Pi)*(xi - x[:,1]) + lambda[:,1];
-    grad = inv(Pi)*(xi - (dx[:,1]+x(:,n))) + lambda[:,1];
+    grad = inv(Pi)*(xi - (dx[:,1]+x[:,n])) + lambda[:,1];
     grad = -2 * grad;
 
     #-2*(inv(Pi)*(xi - x0)  + H'*inv(R)*(yo - H*xi))

@@ -14,14 +14,14 @@ for n=1:nmax+1
         P(:,:,1) = Pi;
     else
         # time integration
-        x(:,n) = model.fun(n-1,x(:,n-1),0);
+        x[:,n] = model.fun(n-1,x(:,n-1),0);
         P(:,:,n) = model.tgl(n-1,x(:,n-1),model.tgl(n-1,x(:,n-1),P(:,:,n-1))') + Q;
     end
 
     if obsindex <= length(no) && n == no(obsindex)
         # assimilation
         K = P(:,:,n)*H'*inv(H*P(:,:,n)*H' + R);
-        x(:,n)  = x(:,n) + K * (yo(:,obsindex) - H*x(:,n));
+        x[:,n]  = x[:,n] + K * (yo(:,obsindex) - H*x[:,n]);
         P(:,:,n) = P(:,:,n) - K*H*P(:,:,n);
 
         obsindex = obsindex + 1;
