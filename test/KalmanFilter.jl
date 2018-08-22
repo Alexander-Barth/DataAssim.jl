@@ -3,8 +3,8 @@
 
 function KalmanFilter(xi,Pi,model_fun,model_tgl,Q,yo,R,H,nmax,no)
 
-    x = zeros(size(xi,1),size(yo,2));
-    P = zeros(size(xi,1),size(xi,1),size(yo,2));
+    x = zeros(size(xi,1),nmax+1);
+    P = zeros(size(xi,1),size(xi,1),nmax+1);
     obsindex = 1;
 
     for n=1:nmax+1

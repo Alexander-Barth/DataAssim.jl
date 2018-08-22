@@ -5,6 +5,7 @@ using DIVAnd
 
 include("fourDVar.jl")
 include("KalmanFilter.jl")
+include("TwinExperiment.jl")
 
 Random.seed!(12343)
 
@@ -69,7 +70,7 @@ P = P - K*H*P;
 xa2  = xi + K * (yo[:,1] - H*xi);
 
 K = P*H'*inv(H*P*H' + R);
-xa2  = xa2 + K * (yo(:,2) - H*xa2);
+xa2  = xa2 + K * (yo[:,2] - H*xa2);
 
 # should be ~0
 @test xa ≈ xa2 atol=1e-14
@@ -77,22 +78,22 @@ xa2  = xa2 + K * (yo(:,2) - H*xa2);
 
 xa3, = KalmanFilter(xi,Pi,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
-@test M*xa ≈ xa3[:,end]  atol=1e-14)
+@test M*xa ≈ xa3[:,end]  atol=1e-14
 
-#=
 
 #-----------------------------------------
 # test: one obs at IC, one at next time step (with evolution)
 
 M = [1 -.1; 0.1 1];
-model_fun = @(t,x) M*x;
-model_tgl = @(t,x,dx) M*dx;
-model_adj = @(t,x,dx) M'*dx;
+model_fun(t,x,η) = M*x;
+model_tgl(t,x,dx) = M*dx;
+model_adj(t,x,dx) = M'*dx;
 
-xa = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
-xa2 = KalmanFilter(xi,Pi,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
+xa, = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
+xa2, = KalmanFilter(xi,Pi,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
-assert(rms(M*xa,xa2(:,end)) < 1e-14)
+@test M*xa ≈ xa2[:,end] atol=1e-14
+
 
 
 #-----------------------------------------
@@ -100,10 +101,10 @@ assert(rms(M*xa,xa2(:,end)) < 1e-14)
 no = [2,5];
 nmax = 10;
 
-xa = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
-xa2 = KalmanFilter(xi,Pi,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
+xa, = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
+xa2, = KalmanFilter(xi,Pi,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
-assert( rms(M^(nmax)*xa,xa2(:,end)) < 1e-14)
+@test M^(nmax)*xa ≈ xa2[:,end] atol=1e-14
 
 
 # twin experiment
@@ -113,18 +114,15 @@ assert( rms(M^(nmax)*xa,xa2(:,end)) < 1e-14)
 n = 2;
 m = 1;
 
-#M = @(x) x;
-#MT = @(x) x;
-
-M = eye(2,2);
-model_fun = @(t,x) M*x;
-model_tgl = @(t,x,dx) M*dx;
-model_adj = @(t,x,dx) M'*dx;
+M = I
+model_fun(t,x,η) = M*x;
+model_tgl(t,x,dx) = M*dx;
+model_adj(t,x,dx) = M'*dx;
 
 H = [1 0];
 xit = [1; 1];
-Pi = eye(n);
-R = eye(m);
+Pi = Matrix(I,n,n)
+R = Matrix(I,m,m)
 Q = zeros(n,n);
 
 nmax = 100;
@@ -132,9 +130,11 @@ nmax = 100;
 # at which time step to assimilate
 # 1 is IC, 2 -> after first time step
 no=3:nmax;
-method = '4DVar';
+method = "4DVar";
 
-[xt,xfree,xa,yt,yo] = TwinExperiment(model,xit,Pi,Q,R,H,nmax,no,method);
+xt,xfree,xa,yt,yo = TwinExperiment(model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,no,method);
+
+#=
 
 # lorenz63
 
@@ -174,10 +174,10 @@ check_tgl_adj(model,3,0);
 
 if 1
 nmax = 10000;
-#[xt,xfree,xa,yt,yo,diag] = TwinExperiment(model,xit,Pi,Q,R,H,nmax,no,method);
+#[xt,xfree,xa,yt,yo,diag] = TwinExperiment(model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,no,method);
 
 # true run
-[xt,yt] = FreeRun(model,xit,Q,H,nmax,no);
+[xt,yt] = FreeRun(model_fun,xit,Q,H,nmax,no);
 rg(xt)
 
 end

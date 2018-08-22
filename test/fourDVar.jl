@@ -26,13 +26,11 @@ end
 
 
 function cost2(xi,Pi,model_fun,xa,yo,R,H,nmax,no)
-
     x,Hx = FreeRun(model_fun,xa,[],H,nmax,no);
 
     # cost function
     tmp = x[:,1] - xa;
     J = tmp' * (Pi \ tmp);
-
     for i = 1:size(yo,2)
         tmp = yo[:,i] - Hx[:,i];
         J = J + tmp' * (R \ tmp);
@@ -62,21 +60,19 @@ function gradient(xi,dx0,x,Pi,model_tgl,model_adj,yo,R,H,nmax,no)
         end
     end
 
-    n = nmax+1
-    grad = inv(Pi)*(xi - (dx[:,1]+x[:,n])) + lambda[:,1];
+    grad = inv(Pi)*(xi - (dx[:,1]+x[:,1])) + lambda[:,1];
     grad = -2 * grad;
 
     #-2*(inv(Pi)*(xi - x0)  + H'*inv(R)*(yo - H*xi))
-
     return grad,lambda
 end
 
 
-function fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no; innerloops = 10,
+function fourDVar(xi::AbstractVector,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no; innerloops = 10,
     outerloops = 2,
     tol = 1e-5)
 
-    xa = xi;
+    xa = xi
     x = zeros(size(xi,1),nmax+1);
 
     Jfun(xa) = cost2(xi,Pi,model_fun,xa,yo,R,H,nmax,no);
@@ -85,7 +81,7 @@ function fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no; innerloops
     for i=1:outerloops
 
         # run with non-linear model
-        #[x,Hx] = FreeRun(model,xa,[],H,nmax,no);
+        #[x,Hx] = FreeRun(model_fun,xa,[],H,nmax,no);
         #J[i] = cost(xi,Pi,x,yo,R,Hx);
         #J[i] = cost(xa,Pi,x,yo,R,Hx);
         #[J[i],x,Hx] = cost2(xi,Pi,model,xa,yo,R,H,nmax,no);
@@ -96,16 +92,18 @@ function fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no; innerloops
         grad(dx) = gradient(xi,dx,x,Pi,model_tgl,model_adj,yo,R,H,nmax,no)[1];
         b = grad(zeros(size(xi)));
         function fun(dx,fdx)
-            fdx .= b - grad(dx);
-            @show fdx
+            fdx[:] = b - grad(dx);
         end
-        @show b
-        dxa,cgsuccess,niter = DIVAnd.conjugategradient(fun,b,tol=tol,maxit=innerloops,x0=zeros(size(xi)))
 
-        tmp = zeros(size(xi))
-        fun(dxa,tmp)
-        @show sum(tmp.^2)
-        #  assert(sum((fun(dxa)-b).^2) < 10*tol^2)
+        dxa,cgsuccess,niter = DIVAnd.conjugategradient(fun,b,tol=tol/norm(b),maxit=innerloops,x0=zeros(size(xi)))
+
+        @debug begin
+            tmp = zeros(size(xi))
+            fun(dxa,tmp)
+            tmp = tmp - b
+
+            @show tmp,sum(tmp.^2)
+        end
 
         # add increment to dxa
         xa = xa + dxa;
