@@ -6,20 +6,32 @@ using DIVAnd
 abstract type AbstractModel
 end
 
-mutable struct ModelMatrix{T <: AbstractMatrix} <: AbstractModel
+mutable struct ModelMatrix{T <: Union{AbstractMatrix,UniformScaling}} <: AbstractModel
     M::T
 end
 
-forecast(M::ModelMatrix,t,x) = M*x
-tgl(M::ModelMatrix,t,dx) = M*dx
-adj(M::ModelMatrix,t,dx) = M'*dx
-
+(M::ModelMatrix)(t,x) = M.M*x
+tgl(M::ModelMatrix,t,dx) = M.M*dx
+adj(M::ModelMatrix,t,dx) = M.M'*dx
 
 include("fourDVar.jl")
 include("KalmanFilter.jl")
 include("TwinExperiment.jl")
 
+include("lorenz63model.jl")
+
 Random.seed!(12343)
+
+
+x = randn(4)
+ℳ = ModelMatrix(2*I)
+@test ℳ(0,x) ≈ 2*x
+@test tgl(ℳ,0,x) ≈ 2*x
+@test adj(ℳ,0,x) ≈ 2*x
+
+
+
+
 
 # test: one obs at IC
 

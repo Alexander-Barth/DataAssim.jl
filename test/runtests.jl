@@ -3,6 +3,9 @@ using Test
 using LinearAlgebra
 using Statistics
 
+
+@testset "Ensemble methods" begin
+
 # number of elements in the state vector
 n = 10
 # ensemble size
@@ -79,3 +82,8 @@ Xal,xal = DataAssim.local_ETKF2(Xf,H,y,diag(R),part,selectObs)
 @test DataAssim.compact_locfun(1.5) ≈ 19/1152 atol=tol
 @test DataAssim.compact_locfun(2) ≈ 0 atol=tol
 @test DataAssim.compact_locfun(3) ≈ 0 atol=tol
+end
+
+@testset "Variational methods" begin
+    include("test_4dvar_assim.jl")
+end
