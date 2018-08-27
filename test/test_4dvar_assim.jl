@@ -22,6 +22,15 @@ include("lorenz63model.jl")
 
 Random.seed!(12343)
 
+ℳ = Lorenz63Model(0.01)
+
+@test ℳ(0,[1.,2.,3.]) ≈ [1.1065,  2.241665,  2.9430075] atol=1e-3
+
+x = randn(3,10000)
+for k = 1:size(x,2)-1
+    x[:,k+1] = ℳ(k,x[:,k])
+end
+
 
 x = randn(4)
 ℳ = ModelMatrix(2*I)

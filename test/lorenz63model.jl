@@ -6,9 +6,9 @@ mutable struct Lorenz63Model{T} <: AbstractModel
 end
 
 
-Lorenz63Model(dt,sigma=10.,rho = 28,beta = 8/3) = Lorenz63Model(dt,rho,beta)
+Lorenz63Model(dt,sigma=10.,beta = 8/3.,rho = 28.) = Lorenz63Model(dt,sigma,beta,rho)
 
-function (M::Lorenz63Model)(t,x,eta = 0)
+function (M::Lorenz63Model)(t,x,eta = zeros(eltype(x),size(x)))
     return rungekutta2(t,x,M.dt,(t,x) -> lorenz63_dxdt(M.sigma,M.beta,M.rho,x)) + eta
 end
 
@@ -24,9 +24,9 @@ end
 
 function lorenz63_dxdt(sigma,beta,rho,x)
     dxdt = similar(x)
-    dxdt[1] = sigma*(x(2)-x(1))
-    dxdt[1] = x(1)*(rho-x(3)) - x(2)
-    dxdt[3] = x(1)*x(2) - beta * x(3)
+    dxdt[1] = sigma*(x[2]-x[1])
+    dxdt[2] = x[1]*(rho-x[3]) - x[2]
+    dxdt[3] = x[1]*x[2] - beta * x[3]
     return dxdt
 end
 
