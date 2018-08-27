@@ -70,14 +70,16 @@ function gradient(xi,dx0,x,Pi,model_tgl,model_adj,yo,R,H,nmax,no)
 end
 
 
-# function fourDVar(xi::AbstractVector,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no; innerloops = 10,
-#     outerloops = 2,
-#     tol = 1e-5)
+function fourDVar(
+    xi::AbstractVector,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no;
+    innerloops = 10,
+    outerloops = 2,
+    tol = 1e-5)
 
-function fourDVar(xi::AbstractVector,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no)
-    innerloops = 10
-    outerloops = 2
-    tol = 1e-5
+#function fourDVar(xi::AbstractVector,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no)
+#    innerloops = 10
+#    outerloops = 2
+#    tol = 1e-5
 
     xa = float(xi)
     x = zeros(size(xi,1),nmax+1);
@@ -118,7 +120,7 @@ function fourDVar(xi::AbstractVector,Pi,model_fun,model_tgl,model_adj,yo,R,H,nma
         #xa =  dxa;
     end
 
-    return xa,J #,Jfun
+    return xa,J#,Jfun
 end
 
 

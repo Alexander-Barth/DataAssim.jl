@@ -3,6 +3,18 @@ using Test
 using Random
 using DIVAnd
 
+abstract type AbstractModel
+end
+
+mutable struct ModelMatrix{T <: AbstractMatrix} <: AbstractModel
+    M::T
+end
+
+forecast(M::ModelMatrix,t,x) = M*x
+tgl(M::ModelMatrix,t,dx) = M*dx
+adj(M::ModelMatrix,t,dx) = M'*dx
+
+
 include("fourDVar.jl")
 include("KalmanFilter.jl")
 include("TwinExperiment.jl")
@@ -137,6 +149,7 @@ method = "4DVar";
 xt,xfree,xa,yt,yo = TwinExperiment(model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,no,method);
 
 @inferred FreeRun(model_fun,xi,Q,H,nmax,no)
+@inferred TwinExperiment(model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,no,method)
 
 #=
 

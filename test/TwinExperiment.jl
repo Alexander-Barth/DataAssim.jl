@@ -24,11 +24,11 @@ xfree,yfree = FreeRun(model_fun,xi,Q,H,nmax,no);
 # assimilation
 
 if method == "4DVar"
-  xia,J,Jfun = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no,outerloops = 10);
+  xia,J = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no,outerloops = 10);
   xa,ya = FreeRun(model_fun,xia,Q,H,nmax,no);
   Pa = [];
   diag[:J] = J;
-  diag[:Jfun] = Jfun;
+  #diag[:Jfun] = Jfun;
 elseif method == "KF"
   xa,Pa = KalmanFilter(xi,Pi,model_fun,model_tgl,Q,yo,R,H,nmax,no);
   diag[:Pa] = Pa;
