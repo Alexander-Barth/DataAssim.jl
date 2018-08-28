@@ -99,8 +99,8 @@ yo = randn(m,nmax+1);
 # 1 is IC, 2 -> after first time step
 no=[1];
 
-xa, = fourDVar(xi,Pi,ℳ,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
-@inferred fourDVar(xi,Pi,ℳ,model_fun,model_tgl,model_adj,yo,R,H,nmax,no)
+xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no);
+@inferred fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no)
 
 #[xa3] = pcg(fun,b,xi);
 
@@ -115,11 +115,11 @@ xa2  = xi + K * (yo - H*xi);
 # should be ~0
 @test xa ≈ xa2
 
-xa3, = KalmanFilter(xi,Pi,ℳ,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
+xa3, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
 @test xa ≈ xa3
 
-@inferred KalmanFilter(xi,Pi,ℳ,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no)
+@inferred KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no)
 
 #-----------------------------------------
 # test: two obs at IC (no evolution)
@@ -129,7 +129,7 @@ yo = randn(m,nmax+1);
 yo = [3 7];
 no = [1,2];
 
-xa, = fourDVar(xi,Pi,ℳ,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
+xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no);
 
 P = Pi;
 K = P*H'*inv(H*P*H' + R);
@@ -143,7 +143,7 @@ xa2  = xa2 + K * (yo[:,2] - H*xa2);
 @test xa ≈ xa2 atol=1e-14
 
 
-xa3, = KalmanFilter(xi,Pi,ℳ,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
+xa3, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
 @test M*xa ≈ xa3[:,end]  atol=1e-14
 
@@ -157,8 +157,8 @@ model_tgl(t,x,dx) = M*dx;
 model_adj(t,x,dx) = M'*dx;
 ℳ = ModelMatrix(M)
 
-xa, = fourDVar(xi,Pi,ℳ,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
-xa2, = KalmanFilter(xi,Pi,ℳ,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
+xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no);
+xa2, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
 @test M*xa ≈ xa2[:,end] atol=1e-14
 
@@ -169,8 +169,8 @@ xa2, = KalmanFilter(xi,Pi,ℳ,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no
 no = [2,5];
 nmax = 10;
 
-xa, = fourDVar(xi,Pi,ℳ,model_fun,model_tgl,model_adj,yo,R,H,nmax,no);
-xa2, = KalmanFilter(xi,Pi,ℳ,model_fun,model_tgl,zeros(size(Pi)),yo,R,H,nmax,no);
+xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no);
+xa2, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no);
 # should be ~0
 @test M^(nmax)*xa ≈ xa2[:,end] atol=1e-14
 
@@ -201,10 +201,10 @@ nmax = 100;
 no=3:nmax;
 method = "4DVar";
 
-xt,xfree,xa,yt,yo = TwinExperiment(ℳ,model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,no,method);
+xt,xfree,xa,yt,yo = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
 
-@inferred FreeRun(ℳ,model_fun,xi,Q,H,nmax,no)
-@inferred TwinExperiment(ℳ,model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,no,method)
+@inferred FreeRun(ℳ,xi,Q,H,nmax,no)
+@inferred TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method)
 
 #=
 
@@ -231,7 +231,7 @@ Q = zeros(n,n);
 
 method = '4DVar';
 
-#[xt,xfree,xa,yt,yo,diag] = TwinExperiment(ℳ,model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,no,method);
+#[xt,xfree,xa,yt,yo,diag] = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
 
 
 if 0
@@ -246,17 +246,17 @@ check_tgl_adj(model,3,0);
 
 if 1
 nmax = 10000;
-#[xt,xfree,xa,yt,yo,diag] = TwinExperiment(ℳ,model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,no,method);
+#[xt,xfree,xa,yt,yo,diag] = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
 
 # true run
-[xt,yt] = FreeRun(ℳ,model_fun,xit,Q,H,nmax,no);
+[xt,yt] = FreeRun(ℳ,xit,Q,H,nmax,no);
 rg(xt)
 
 end
 nmax = 100;
 no = 5:nmax;
 method = 'KF';
-[xt,xfree,xa,yt,yo,diag] = TwinExperiment(ℳ,model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,no,method);
+[xt,xfree,xa,yt,yo,diag] = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
 
 if 0
 subplot(2,1,1)

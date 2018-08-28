@@ -1,14 +1,14 @@
 # nmax: total number of integration of the model
 # x of size n x (nmax+1)
 
-function FreeRun!(ℳ,model_fun,xi,Q,H,nmax,no,x,Hx)
+function FreeRun!(ℳ,xi,Q,H,nmax,no,x,Hx)
     obsindex = 1;
 
     for n=1:nmax+1
         if n == 1
             x[:,1] = xi;
         else
-            x[:,n] = model_fun(n-1,x[:,n-1],0);
+            x[:,n] = ℳ(n-1,x[:,n-1]);
         end
 
         if obsindex <= length(no) && n == no[obsindex]
@@ -19,17 +19,17 @@ function FreeRun!(ℳ,model_fun,xi,Q,H,nmax,no,x,Hx)
     end
 end
 
-function FreeRun(ℳ,model_fun,xi,Q,H,nmax,no)
+function FreeRun(ℳ,xi,Q,H,nmax,no)
     T = eltype(xi)
     x = zeros(T,size(xi,1),nmax+1);
     Hx = zeros(T,size(H,1),length(no))
-    FreeRun!(ℳ,model_fun,xi,Q,H,nmax,no,x,Hx)
+    FreeRun!(ℳ,xi,Q,H,nmax,no,x,Hx)
     return x,Hx
 end
 
 
-function cost2(xi,Pi,ℳ,model_fun,xa,yo,R,H,nmax,no,x,Hx)
-    FreeRun!(ℳ,model_fun,xa,[],H,nmax,no,x,Hx);
+function cost2(xi,Pi,ℳ,xa,yo,R,H,nmax,no,x,Hx)
+    FreeRun!(ℳ,xa,[],H,nmax,no,x,Hx);
 
     # cost function
     tmp = x[:,1] - xa;
@@ -43,19 +43,19 @@ function cost2(xi,Pi,ℳ,model_fun,xa,yo,R,H,nmax,no,x,Hx)
 end
 
 
-function gradient(xi,dx0,x,Pi,model_tgl,model_adj,yo,R,H,nmax,no)
+function gradient(xi,dx0,x,Pi,ℳ,yo,R,H,nmax,no)
 
     dx = zeros(size(xi,1),nmax+1);
     dx[:,1] = dx0;
     obsindex = length(no);
 
     for n=1:nmax
-        dx[:,n+1] = model_tgl(n,x[:,n],dx[:,n]);
+        dx[:,n+1] = tgl(ℳ,n,x[:,n],dx[:,n]);
     end
 
     lambda = zeros(size(xi,1),nmax+2);
     for n=nmax+1:-1:1
-        lambda[:,n] = model_adj(n,x[:,n],lambda[:,n+1]);
+        lambda[:,n] = adj(ℳ,n,x[:,n],lambda[:,n+1]);
 
         if obsindex > 0 && n == no[obsindex]
             lambda[:,n] = lambda[:,n] + H'*inv(R)*(yo[:,obsindex] - H*(dx[:,n]+x[:,n] ));
@@ -71,12 +71,12 @@ end
 
 
 function fourDVar(
-    xi::AbstractVector,Pi,ℳ,model_fun,model_tgl,model_adj,yo,R,H,nmax,no;
+    xi::AbstractVector,Pi,ℳ,yo,R,H,nmax,no;
     innerloops = 10,
     outerloops = 2,
     tol = 1e-5)
 
-#function fourDVar(xi::AbstractVector,Pi,ℳ,model_fun,model_tgl,model_adj,yo,R,H,nmax,no)
+#function fourDVar(xi::AbstractVector,Pi,ℳ,yo,R,H,nmax,no)
 #    innerloops = 10
 #    outerloops = 2
 #    tol = 1e-5
@@ -91,15 +91,15 @@ function fourDVar(
     for i=1:outerloops
 
         # run with non-linear model
-        #[x,Hx] = FreeRun(ℳ,model_fun,xa,[],H,nmax,no);
+        #[x,Hx] = FreeRun(ℳ,xa,[],H,nmax,no);
         #J[i] = cost(xi,Pi,x,yo,R,Hx);
         #J[i] = cost(xa,Pi,x,yo,R,Hx);
-        J[i] = cost2(xi,Pi,ℳ,model_fun,xa,yo,R,H,nmax,no,x,Hx);
+        J[i] = cost2(xi,Pi,ℳ,xa,yo,R,H,nmax,no,x,Hx);
         #J[i],x,Hx = Jfun(xa);
 
         # dx increment relative to xi
 
-        grad(dx) = gradient(xi,dx,x,Pi,model_tgl,model_adj,yo,R,H,nmax,no)[1];
+        grad(dx) = gradient(xi,dx,x,Pi,ℳ,yo,R,H,nmax,no)[1];
         b .= grad(zeros(size(xi)));
         function fun(dx,fdx)
             fdx[:] = b - grad(dx)

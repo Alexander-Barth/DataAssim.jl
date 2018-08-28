@@ -1,7 +1,7 @@
 # nmax: total number of integration of the model
 # x of size n x (nmax+1)
 
-function KalmanFilter(xi,Pi,ℳ,model_fun,model_tgl,Q,yo,R,H,nmax,no)
+function KalmanFilter(xi,Pi,ℳ,Q,yo,R,H,nmax,no)
 
     x = zeros(size(xi,1),nmax+1);
     P = zeros(size(xi,1),size(xi,1),nmax+1);
@@ -14,8 +14,8 @@ function KalmanFilter(xi,Pi,ℳ,model_fun,model_tgl,Q,yo,R,H,nmax,no)
             P[:,:,1] = Pi;
         else
             # time integration
-            x[:,n] = model_fun(n-1,x[:,n-1],0);
-            P[:,:,n] = model_tgl(n-1,x[:,n-1],model_tgl(n-1,x[:,n-1],P[:,:,n-1])') + Q;
+            x[:,n] = ℳ(n-1,x[:,n-1]);
+            P[:,:,n] = tgl(ℳ,n-1,x[:,n-1],tgl(ℳ,n-1,x[:,n-1],P[:,:,n-1])') + Q;
         end
 
         if obsindex <= length(no) && n == no[obsindex]
