@@ -1,7 +1,7 @@
 # nmax: total number of integration of the model
 # x of size n x (nmax+1)
 
-function KalmanFilter(xi,Pi,model_fun,model_tgl,Q,yo,R,H,nmax,no)
+function KalmanFilter(xi,Pi,ℳ,model_fun,model_tgl,Q,yo,R,H,nmax,no)
 
     x = zeros(size(xi,1),nmax+1);
     P = zeros(size(xi,1),size(xi,1),nmax+1);

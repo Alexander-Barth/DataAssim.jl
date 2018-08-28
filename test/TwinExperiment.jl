@@ -1,4 +1,4 @@
-function TwinExperiment(model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,
+function TwinExperiment(ℳ,model_fun,model_tgl,model_adj,xit,Pi,Q,R,H,nmax,
                         no,method; Nens = 100)
 
 
@@ -7,7 +7,7 @@ m = size(R,1);
 diag = Dict();
 
 # true run
-xt,yt = FreeRun(model_fun,xit,Q,H,nmax,no);
+xt,yt = FreeRun(ℳ,model_fun,xit,Q,H,nmax,no);
 
 # add perturbations to IC
 xi = xit + cholesky(Pi).U * randn(n)
@@ -19,18 +19,18 @@ for i = 1:length(no)
 end
 
 # free run
-xfree,yfree = FreeRun(model_fun,xi,Q,H,nmax,no);
+xfree,yfree = FreeRun(ℳ,model_fun,xi,Q,H,nmax,no);
 
 # assimilation
 
 if method == "4DVar"
-  xia,J = fourDVar(xi,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no,outerloops = 10);
-  xa,ya = FreeRun(model_fun,xia,Q,H,nmax,no);
+  xia,J = fourDVar(xi,Pi,ℳ,model_fun,model_tgl,model_adj,yo,R,H,nmax,no,outerloops = 10);
+  xa,ya = FreeRun(ℳ,model_fun,xia,Q,H,nmax,no);
   Pa = [];
   diag[:J] = J;
   #diag[:Jfun] = Jfun;
 elseif method == "KF"
-  xa,Pa = KalmanFilter(xi,Pi,model_fun,model_tgl,Q,yo,R,H,nmax,no);
+  xa,Pa = KalmanFilter(xi,Pi,ℳ,model_fun,model_tgl,Q,yo,R,H,nmax,no);
   diag[:Pa] = Pa;
 # elseif strcmp(method,"ETKF") || strcmp(method,"CLEnKF") || ...
 #       strmatch("sangoma-",method) == 1

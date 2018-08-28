@@ -1,7 +1,7 @@
 # nmax: total number of integration of the model
 # x of size n x (nmax+1)
 
-function FreeRun!(model_fun,xi,Q,H,nmax,no,x,Hx)
+function FreeRun!(ℳ,model_fun,xi,Q,H,nmax,no,x,Hx)
     obsindex = 1;
 
     for n=1:nmax+1
@@ -19,17 +19,17 @@ function FreeRun!(model_fun,xi,Q,H,nmax,no,x,Hx)
     end
 end
 
-function FreeRun(model_fun,xi,Q,H,nmax,no)
+function FreeRun(ℳ,model_fun,xi,Q,H,nmax,no)
     T = eltype(xi)
     x = zeros(T,size(xi,1),nmax+1);
     Hx = zeros(T,size(H,1),length(no))
-    FreeRun!(model_fun,xi,Q,H,nmax,no,x,Hx)
+    FreeRun!(ℳ,model_fun,xi,Q,H,nmax,no,x,Hx)
     return x,Hx
 end
 
 
-function cost2(xi,Pi,model_fun,xa,yo,R,H,nmax,no,x,Hx)
-    FreeRun!(model_fun,xa,[],H,nmax,no,x,Hx);
+function cost2(xi,Pi,ℳ,model_fun,xa,yo,R,H,nmax,no,x,Hx)
+    FreeRun!(ℳ,model_fun,xa,[],H,nmax,no,x,Hx);
 
     # cost function
     tmp = x[:,1] - xa;
@@ -71,12 +71,12 @@ end
 
 
 function fourDVar(
-    xi::AbstractVector,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no;
+    xi::AbstractVector,Pi,ℳ,model_fun,model_tgl,model_adj,yo,R,H,nmax,no;
     innerloops = 10,
     outerloops = 2,
     tol = 1e-5)
 
-#function fourDVar(xi::AbstractVector,Pi,model_fun,model_tgl,model_adj,yo,R,H,nmax,no)
+#function fourDVar(xi::AbstractVector,Pi,ℳ,model_fun,model_tgl,model_adj,yo,R,H,nmax,no)
 #    innerloops = 10
 #    outerloops = 2
 #    tol = 1e-5
@@ -91,10 +91,10 @@ function fourDVar(
     for i=1:outerloops
 
         # run with non-linear model
-        #[x,Hx] = FreeRun(model_fun,xa,[],H,nmax,no);
+        #[x,Hx] = FreeRun(ℳ,model_fun,xa,[],H,nmax,no);
         #J[i] = cost(xi,Pi,x,yo,R,Hx);
         #J[i] = cost(xa,Pi,x,yo,R,Hx);
-        J[i] = cost2(xi,Pi,model_fun,xa,yo,R,H,nmax,no,x,Hx);
+        J[i] = cost2(xi,Pi,ℳ,model_fun,xa,yo,R,H,nmax,no,x,Hx);
         #J[i],x,Hx = Jfun(xa);
 
         # dx increment relative to xi

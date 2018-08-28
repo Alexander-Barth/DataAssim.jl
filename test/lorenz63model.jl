@@ -20,7 +20,6 @@ end
 
 function adj(ℳ::Lorenz63Model,t,x,dx)
     f_adj(t,x,dx)  = lorenz63_dxdt_adj(ℳ.σ,ℳ.β,ℳ.ρ,x,dx)
-    #f_adj(t,x,dx) = [  -ℳ.σ   ℳ.σ       0; ℳ.ρ-x[3]     -1   -x[1]; x[2]   x[1]   -ℳ.β]' * dx;
     f(t,x) = lorenz63_dxdt(ℳ.σ,ℳ.β,ℳ.ρ,x)
 
     return rungekutta2_adj(t,x,ℳ.dt,f,dx,f_adj);
