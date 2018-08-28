@@ -10,9 +10,29 @@ mutable struct ModelMatrix{T <: Union{AbstractMatrix,UniformScaling}} <: Abstrac
     M::T
 end
 
-(M::ModelMatrix)(t,x) = M.M*x
-tgl(M::ModelMatrix,t,dx) = M.M*dx
-adj(M::ModelMatrix,t,dx) = M.M'*dx
+(M::ModelMatrix)(t,x,η = zeros(size(x))) = M.M*x + η
+tgl(M::ModelMatrix,t,x,dx) = M.M*dx
+adj(M::ModelMatrix,t,x,dx) = M.M'*dx
+
+struct ModelFun{F} <: AbstractModel
+    forecast::F
+    tgl
+    adj
+end
+
+(M::ModelFun)(t,x,η = zeros(size(x))) = M.forecast(t,x,η)
+tgl(M::ModelFun,t,x,dx) = M.tgl(t,x,dx)
+adj(M::ModelFun,t,x,dx) = M.adj(t,x,dx)
+
+function check(ℳ::AbstractModel,n,t = 0,ϵ = 1e-5)
+    dx = randn(n)
+    x = randn(n)
+    dx2 = randn(n)
+
+    @test (ℳ(t,x + ϵ*dx) - ℳ(t,x - ϵ*dx)) / (2*ϵ)  ≈ tgl(ℳ,t,x,dx) atol=10*ϵ^2
+    @test dx2 ⋅ tgl(ℳ,t,x,dx) ≈ adj(ℳ,t,x,dx2) ⋅ dx   atol=1e-7
+end
+
 
 include("fourDVar.jl")
 include("KalmanFilter.jl")
@@ -31,14 +51,24 @@ for k = 1:size(x,2)-1
     x[:,k+1] = ℳ(k,x[:,k])
 end
 
+check(ℳ,3)
 
 x = randn(4)
 ℳ = ModelMatrix(2*I)
 @test ℳ(0,x) ≈ 2*x
-@test tgl(ℳ,0,x) ≈ 2*x
-@test adj(ℳ,0,x) ≈ 2*x
+@test tgl(ℳ,0,0,x) ≈ 2*x
+@test adj(ℳ,0,0,x) ≈ 2*x
 
 
+
+ℳ = ModelFun((t,x,η) -> 2*x,(t,x,dx) -> 2*dx,(t,x,dx) -> 2*dx)
+@test ℳ(0,x) ≈ 2*x
+@test tgl(ℳ,0,0,x) ≈ 2*x
+@test adj(ℳ,0,0,x) ≈ 2*x
+
+
+
+check(ℳ,4)
 
 
 
