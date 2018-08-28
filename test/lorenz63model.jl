@@ -35,32 +35,15 @@ function lorenz63_dxdt(σ,β,ρ,x)
 end
 
 function lorenz63_dxdt_tgl(σ,β,ρ,x,dx)
-    @show "here2"
     Ddxdt = similar(x)
     Ddxdt[1] = σ*(dx[2]-dx[1])
     Ddxdt[2] = dx[1]*(ρ-x[3]) - x[1]*dx[3] - dx[2]
     Ddxdt[3] = dx[1]*x[2] + x[1]*dx[2] - β * dx[3]
-    #return [  -σ  σ       0; ρ-x[3]     -1   -x[1]; x[2]   x[1]   -β] * dx
-    return Ddxdt
-end
-
-function lorenz63_dxdt_adj2(σ,β,ρ,x,dx)
-    @show "here3"
-    Ddxdt = similar(x)
-    Ddxdt[1] = σ*(dx[2]-dx[1])
-    Ddxdt[2] = dx[1]*(ρ-x[3]) - x[1]*dx[3] - dx[2]
-    Ddxdt[3] = dx[1]*x[2] + x[1]*dx[2] - β * dx[3]
-
-    Ddxdt = [  -σ  σ       0; ρ-x[3]     -1   -x[1]; x[2]   x[1]   -β]' * dx
-#    Ddxdt[3] = dx[1]*x[2] + x[1]*dx[2] - β * dx[3]
-
-
     return Ddxdt
 end
 
 
 function lorenz63_dxdt_adj(σ,β,ρ,x,Ddxdt)
-    @show "here4"
     dx = similar(x)
     #Ddxdt[1] = σ*(dx[2]-dx[1])
     dx[1] = -σ * Ddxdt[1]
