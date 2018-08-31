@@ -12,13 +12,13 @@ function (ℳ::Lorenz63Model)(t,x,eta = zeros(eltype(x),size(x)))
     return rungekutta2(t,x,ℳ.dt,(t,x) -> lorenz63_dxdt(ℳ.σ,ℳ.β,ℳ.ρ,x)) + eta
 end
 
-function tgl(ℳ::Lorenz63Model,t,x,dx)
+function tgl(ℳ::Lorenz63Model,t,x,dx::AbstractVector)
     f_tgl(t,x,dx)  = lorenz63_dxdt_tgl(ℳ.σ,ℳ.β,ℳ.ρ,x,dx)
     f(t,x) = lorenz63_dxdt(ℳ.σ,ℳ.β,ℳ.ρ,x)
     return rungekutta2_tgl(t,x,ℳ.dt,f,dx,f_tgl);
 end
 
-function adj(ℳ::Lorenz63Model,t,x,dx)
+function adj(ℳ::Lorenz63Model,t,x,dx::AbstractVector)
     f_adj(t,x,dx)  = lorenz63_dxdt_adj(ℳ.σ,ℳ.β,ℳ.ρ,x,dx)
     f(t,x) = lorenz63_dxdt(ℳ.σ,ℳ.β,ℳ.ρ,x)
 
