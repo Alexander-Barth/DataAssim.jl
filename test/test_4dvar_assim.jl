@@ -250,14 +250,14 @@ Q = zeros(n,n);
 
 method = "4DVar";
 
-#xt,xfree,xa,yt,yo,diag = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
+#xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
 
 ℳ = Lorenz63Model(0.05)
 
 
 if true
 nmax = 10000;
-#xt,xfree,xa,yt,yo,diag = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
+#xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
 
 # true run
 xt,yt = FreeRun(ℳ,xit,Q,H,nmax,no);
@@ -268,7 +268,7 @@ end
 nmax = 100;
 no = 5:nmax;
 method = "KF";
-xt,xfree,xa,yt,yo,diag = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
+xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
 
 if false
     using PyPlot
@@ -278,6 +278,6 @@ if false
     plot(xa[1,:],"g", label = "assim")
     legend()
     subplot(2,1,2)
-    plot(diag.J)
+    plot(diag_.J)
 end
 
