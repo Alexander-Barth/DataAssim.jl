@@ -261,7 +261,7 @@ nmax = 10000;
 
 # true run
 xt,yt = FreeRun(ℳ,xit,Q,H,nmax,no);
-rg(xt)
+
 
 end
 
