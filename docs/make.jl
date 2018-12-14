@@ -2,7 +2,7 @@ using Documenter
 using DataAssim
 
 makedocs(
-    format = :html,
+    format = Documenter.HTML(),
     modules = [DataAssim],
     sitename = "DataAssim",
     pages = [
@@ -16,7 +16,6 @@ makedocs(
 deploydocs(
     repo = "github.com/Alexander-Barth/DataAssim.jl.git",
     target = "build",
-    julia  = "0.6",
     deps = nothing,
     make = nothing,
 )
