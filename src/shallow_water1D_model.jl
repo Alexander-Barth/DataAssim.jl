@@ -16,6 +16,9 @@ mutable struct LinShallowWater1DModel{T} <: AbstractModel
 end
 
 """
+    ℳ = LinShallowWater1DModel(dt,g,h,L,imax)
+
+Linear 1D shallow water model.
 
 ## Example
 

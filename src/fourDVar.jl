@@ -19,6 +19,13 @@ function FreeRun!(ℳ,xi,Q,H,nmax,no,x,Hx)
     end
 end
 
+"""
+    x,Hx = FreeRun(ℳ,xi,Q,H,nmax,no)
+
+Performs a free-run with the model `ℳ` and `nmax` time-steps starting at the
+initial condition `xi`. Observations at the time steps given in `no` are 
+extracted with the observation operator `H`.
+"""
 function FreeRun(ℳ,xi,Q,H,nmax,no)
     T = eltype(xi)
     x = zeros(T,size(xi,1),nmax+1);
@@ -28,7 +35,7 @@ function FreeRun(ℳ,xi,Q,H,nmax,no)
 end
 
 
-function cost2(xi,Pi,ℳ,xa,yo,R,H,nmax,no,x,Hx)
+function costfun(xi,Pi,ℳ,xa,yo,R,H,nmax,no,x,Hx)
     FreeRun!(ℳ,xa,[],H,nmax,no,x,Hx);
 
     # cost function
@@ -69,7 +76,18 @@ function gradient(xi,dx0,x,Pi,ℳ,yo,R,H,nmax,no)
     return grad,lambda
 end
 
+"""
+    x,J = fourDVar(
+            xi,Pi,ℳ,yo,R,H,nmax,no;
+            innerloops = 10,
+            outerloops = 2,
+            tol = 1e-5)
 
+Incremental 4D-Var with the model `ℳ` and `nmax` time-steps starting at the
+initial condition `xi` and error covariance `Pi`.
+Observations `yo` (and error covariance `R`) at the time steps given in `no` are
+assimilated with the observation operator `H`.
+"""
 function fourDVar(
     xi::AbstractVector,Pi,ℳ,yo,R,H,nmax,no;
     innerloops = 10,
@@ -90,12 +108,7 @@ function fourDVar(
 
     for i=1:outerloops
 
-        # run with non-linear model
-        #[x,Hx] = FreeRun(ℳ,xa,[],H,nmax,no);
-        #J[i] = cost(xi,Pi,x,yo,R,Hx);
-        #J[i] = cost(xa,Pi,x,yo,R,Hx);
-        J[i] = cost2(xi,Pi,ℳ,xa,yo,R,H,nmax,no,x,Hx);
-        #J[i],x,Hx = Jfun(xa);
+        J[i] = costfun(xi,Pi,ℳ,xa,yo,R,H,nmax,no,x,Hx);
 
         # dx increment relative to xi
 
@@ -117,7 +130,6 @@ function fourDVar(
 
         # add increment to dxa
         xa .= xa + dxa;
-        #xa =  dxa;
     end
 
     return xa,J#,Jfun
