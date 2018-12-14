@@ -34,20 +34,20 @@ function LinShallowWater1DModel(dt,g,h,L,imax)
     return LinShallowWater1DModel(dt,g,h,x_r,x_u)
 end
 
-function pack(ζ,u)
+function pack(ℳ::LinShallowWater1DModel,ζ,u)
     x = zeros(eltype(ζ),(length(ζ)+length(u)))
     x[1:length(ζ)] = ζ
     x[length(ζ)+1:end] = u
     return x
 end
 
-function unpack(x)
+function unpack(ℳ::LinShallowWater1DModel,x)
     imax = (length(x)-1) ÷ 2
     return x[1:imax],x[imax+1:end]
 end
 
 function (ℳ::LinShallowWater1DModel)(t,x,eta = zeros(eltype(x),size(x)))
-    ζ,u = unpack(x)
+    ζ,u = unpack(ℳ,x)
 
     for i=1:length(ζ)
       ζ[i] = ζ[i] - ℳ.dt * ℳ.h * (u[i+1] - u[i])/((ℳ.x_u[i+1] - ℳ.x_u[i]))
@@ -57,13 +57,13 @@ function (ℳ::LinShallowWater1DModel)(t,x,eta = zeros(eltype(x),size(x)))
       u[i] = u[i] - ℳ.dt * ℳ.g * (ζ[i] - ζ[i-1])/((ℳ.x_r[i] - ℳ.x_r[i-1]))
     end
 
-    return pack(ζ,u)
+    return pack(ℳ,ζ,u)
 end
 
 tgl(ℳ::LinShallowWater1DModel,t,x,dx::AbstractVector) = ℳ(t,dx,dx)
 
 function adj(ℳ::LinShallowWater1DModel,t,x,dx::AbstractVector)
-    ζ,u = unpack(dx)
+    ζ,u = unpack(ℳ,dx)
 
     # first transform the momentum equation
     for i = 2:length(u)-1
@@ -77,6 +77,6 @@ function adj(ℳ::LinShallowWater1DModel,t,x,dx::AbstractVector)
         u[i] +=  ℳ.dt * ℳ.h *  ζ[i] /((ℳ.x_u[i+1] - ℳ.x_u[i]))
     end
 
-    return pack(ζ,u)
+    return pack(ℳ,ζ,u)
 end
 

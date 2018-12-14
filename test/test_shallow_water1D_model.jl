@@ -15,7 +15,7 @@ check(ℳ,n)
 ζt = exp.( - (ℳ.x_r .- L/2).^2 )
 ut = zeros(size(ℳ.x_u))
 
-xit = pack(ζt,ut)
+xit = DataAssim.pack(ℳ,ζt,ut)
 Pi = Diagonal(ones(n))
 
 Q = Diagonal(zeros(n))
