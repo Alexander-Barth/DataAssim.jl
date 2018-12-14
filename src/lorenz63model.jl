@@ -89,12 +89,9 @@ end
 function rungekutta2_adj(t,x,dt,f,Dxn,Df_adj)
     k1 = dt * f(t,x)
 
-    Dx = Dxn
-    Dk2 = Dxn
-
-    Dtmp2 = Df_adj(t + dt/2, x+k1/2, dt*Dk2)
-    Dx = Dx + Dtmp2
-    Dk1 = Dtmp2/2 
+    Dtmp2 = Df_adj(t + dt/2, x+k1/2, dt*Dxn)
+    Dx = Dxn + Dtmp2
+    Dk1 = Dtmp2/2
     Dx = Dx + dt*Df_adj(t,x,Dk1)
 
     return Dx
