@@ -190,6 +190,7 @@ xt,xfree,xa,yt,yo = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
 @inferred FreeRun(ℳ,xi,Q,H,nmax,no)
 @inferred TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method)
 
+@test_throws ErrorException TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,"best method");
 
 # lorenz63
 
