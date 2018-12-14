@@ -12,7 +12,7 @@ import DIVAnd: pack, unpack
 export compact_locfun
 
 """
-Abstract base-class of models. A model should implement forecast step, 
+Abstract base-class of models. A model should implement forecast step,
 tangent-linear and adjoint step
 """
 abstract type AbstractModel
@@ -53,7 +53,7 @@ for method = [:EnSRF, :EAKF, :ETKF, :ETKF2, :SEIK, :ESTKF, :serialEnSRF, :EnKF]
     @eval begin
         """
         Xa,xa = "ensemble_analysis"(Xf,HXf,y,R,H,...)
-    
+
     Computes analysis ensemble Xa based on forecast ensemble Xf
     and observations y using various ensemble scheme.
     The function name "ensemble_analysis" can be EnSRF, EAKF, ETKF, SEIK, ESTKF, serialEnSRF or EnKF.
@@ -75,21 +75,21 @@ for method = [:EnSRF, :EAKF, :ETKF, :ETKF2, :SEIK, :ESTKF, :serialEnSRF, :EnKF]
 
 Notations follows:
 Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
-"""       
+"""
         function $method(Xf,HXf,y,R,H; debug = false, tolerance=1e-10)
             #function $method(Xf,HXf,y,R,H)
             #debug = false; tolerance=1e-10;
             tol = tolerance
-            
+
             # ensemble size
             N = size(Xf,2)
-            
+
             # number of observations
             m = size(y,1)
-            
+
             xf = mean(Xf,dims = 2)[:,1]
             Xfp = Xf - repeat(xf, inner = (1,N))
-            
+
             Hxf = mean(HXf, dims = 2)[:,1]
             S = HXf - repeat(Hxf, inner = (1,N))
 
@@ -108,10 +108,10 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 e = eigen(Symmetric(F))
                 Gamma_S = e.vectors
                 Lambda_S = Diagonal(e.values)
-                
+
                 #Lambda_S,Gamma_S = eig(F)
                 #Lambda_S = Diagonal(Lambda_S)
-                
+
                 X_S = S'*Gamma_S * sqrt.(inv(Lambda_S))
                 U_S,Sigma_S,Z_S = svd(X_S)
 
@@ -125,7 +125,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 for iobs = 1:m
                     # the number 1 with the same element type of Xf
                     one = eltype(Xf)(1)
-                    
+
                     # H[[iobs],:] is necessary instead of H[iobs,:] to make it a row vector
                     Hloc = H[[iobs],:]
                     yloc = y[[iobs]]
@@ -134,7 +134,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                     Hxfloc = Hloc*xf
 
                     # ()[1] makes a scalar instead of a vector of size 1
-                    Floc = (Sloc*Sloc')[1] + (N-1)*R[iobs, iobs] 
+                    Floc = (Sloc*Sloc')[1] + (N-1)*R[iobs, iobs]
 
                     Kloc = Xfp*Sloc' / Floc
 
