@@ -207,158 +207,158 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 
                 # Sigma_A should have the size (N-1) x (N-1)
 
-# issue
-# https://github.com/JuliaLang/julia/issues/27132
+                # issue
+                # https://github.com/JuliaLang/julia/issues/27132
 
-U_A,Sigma_A,V_A = svd(Stilde')
-Sigma_A = Diagonal(Sigma_A)
+                U_A,Sigma_A,V_A = svd(Stilde')
+                Sigma_A = Diagonal(Sigma_A)
 
-if debug
-    # last singular should be zero
-    @test abs.(Sigma_A[N,N]) ≈ 0 atol=tol
-end
+                if debug
+                    # last singular should be zero
+                    @test abs.(Sigma_A[N,N]) ≈ 0 atol=tol
+                end
 
-U_A = U_A[:,1:N-1]
-Sigma_A = Sigma_A[1:N-1,1:N-1]
-V_A = V_A[:,1:N-1]
+                U_A = U_A[:,1:N-1]
+                Sigma_A = Sigma_A[1:N-1,1:N-1]
+                V_A = V_A[:,1:N-1]
 
-# eigenvalue decomposition of Pf
-# Gamma_A should have the size (N-1) x (N-1)
+                # eigenvalue decomposition of Pf
+                # Gamma_A should have the size (N-1) x (N-1)
 
-#[Z_A,Gamma_A] = eig(Pf)
-Z_A,sqrtGamma_A,dummy = svd(Xfp)
-sqrtGamma_A = Diagonal(sqrtGamma_A)
+                #[Z_A,Gamma_A] = eig(Pf)
+                Z_A,sqrtGamma_A,dummy = svd(Xfp)
+                sqrtGamma_A = Diagonal(sqrtGamma_A)
 
-if debug
-    # last eigenvalue should be zero
-    @test abs(sqrtGamma_A[end,end]) ≈ 0 atol=tol
-end
+                if debug
+                    # last eigenvalue should be zero
+                    @test abs(sqrtGamma_A[end,end]) ≈ 0 atol=tol
+                end
 
-Gamma_A = sqrtGamma_A.^2 / (N-1)
-Gamma_A = Gamma_A[1:N-1,1:N-1]
-Z_A = Z_A[:,1:N-1]
+                Gamma_A = sqrtGamma_A.^2 / (N-1)
+                Gamma_A = Gamma_A[1:N-1,1:N-1]
+                Z_A = Z_A[:,1:N-1]
 
-if debug
-    # EAKF-decomposition
-    @test Z_A * Gamma_A * Z_A' ≈ Pf
-end
+                if debug
+                    # EAKF-decomposition
+                    @test Z_A * Gamma_A * Z_A' ≈ Pf
+                end
 
-Xap = 1/sqrt(N-1) * Xfp * (U_A * ((sqrt.(I + Sigma_A'*Sigma_A)) \
-                                  (sqrt.(inv(Gamma_A)) * (Z_A' * Xfp))))
+                Xap = 1/sqrt(N-1) * Xfp * (U_A * ((sqrt.(I + Sigma_A'*Sigma_A)) \
+                                                  (sqrt.(inv(Gamma_A)) * (Z_A' * Xfp))))
 
-xa = xf + 1/sqrt(N-1) *  Xfp * (U_A * ((I + Sigma_A'*Sigma_A) \
-                                       (Sigma_A * V_A' * (sqrtR \ (y - Hxf)))))
+                xa = xf + 1/sqrt(N-1) *  Xfp * (U_A * ((I + Sigma_A'*Sigma_A) \
+                                                       (Sigma_A * V_A' * (sqrtR \ (y - Hxf)))))
 
-elseif $method == SEIK
-# SEIK
+            elseif $method == SEIK
+                # SEIK
 
-A = [I; zeros(N-1)']
-A = A - ones(N,N-1)/N
+                A = [I; zeros(N-1)']
+                A = A - ones(N,N-1)/N
 
-L = Xf*A
-HL = HXf*A
+                L = Xf*A
+                HL = HXf*A
 
-if debug
-    # SEIK-L matrix
-    @test L ≈ Xfp[:,1:N-1]
+                if debug
+                    # SEIK-L matrix
+                    @test L ≈ Xfp[:,1:N-1]
 
-    # SEIK-Pf
-    Pf2 = 1/(N-1) * L * ((A'*A) \ L')
-    @test Pf ≈ Pf2
-end
+                    # SEIK-Pf
+                    Pf2 = 1/(N-1) * L * ((A'*A) \ L')
+                    @test Pf ≈ Pf2
+                end
 
-invTTt = (N-1)*(A'*A) + HL' * (R \ HL)
-TTt = inv(invTTt)
+                invTTt = (N-1)*(A'*A) + HL' * (R \ HL)
+                TTt = inv(invTTt)
 
-T = cholesky(inv(invTTt)).U'
+                T = cholesky(inv(invTTt)).U'
 
-if debug
-    # SEIK-Cholesky decomposition
-    @test T*T' ≈ inv(invTTt)
-end
+                if debug
+                    # SEIK-Cholesky decomposition
+                    @test T*T' ≈ inv(invTTt)
+                end
 
-# add omega
-w = ones(N,1)/sqrt(N)
-Omega = householder(w)
-Xap = sqrt(N-1) * L*T*Omega'
+                # add omega
+                w = ones(N,1)/sqrt(N)
+                Omega = householder(w)
+                Xap = sqrt(N-1) * L*T*Omega'
 
-xa = xf + L * (TTt * (HL' * (R \ (y - Hxf))))
-elseif $method == ESTKF
-# ESTKF
-A = zeros(N,N-1)
+                xa = xf + L * (TTt * (HL' * (R \ (y - Hxf))))
+            elseif $method == ESTKF
+                # ESTKF
+                A = zeros(N,N-1)
 
-for j = 1:N-1
-    for i = 1:N
-        if i == j && i < N
-            A[i,j] = 1 - 1/N * 1/(1/sqrt(N)+1)
-        elseif i < N
-            A[i,j] = - 1/N * 1/(1/sqrt(N)+1)
-        else
-            A[i,j] = - 1/sqrt(N)
-        end
-    end
-end
+                for j = 1:N-1
+                    for i = 1:N
+                        if i == j && i < N
+                            A[i,j] = 1 - 1/N * 1/(1/sqrt(N)+1)
+                        elseif i < N
+                            A[i,j] = - 1/N * 1/(1/sqrt(N)+1)
+                        else
+                            A[i,j] = - 1/sqrt(N)
+                        end
+                    end
+                end
 
-L = Xf*A
-HL = HXf*A
+                L = Xf*A
+                HL = HXf*A
 
-if debug
-    #  ESTKF-Pf
-    Pf2 = 1/(N-1) * L * ((A'*A) \ L')
-    @test Pf ≈ Pf2
+                if debug
+                    #  ESTKF-Pf
+                    Pf2 = 1/(N-1) * L * ((A'*A) \ L')
+                    @test Pf ≈ Pf2
 
-    # ESTKF-Pf2
-    Pf2 = 1/(N-1) * L * L'
-    @test Pf ≈ Pf2
-end
+                    # ESTKF-Pf2
+                    Pf2 = 1/(N-1) * L * L'
+                    @test Pf ≈ Pf2
+                end
 
-invTTt = (N-1)*I + HL' * (R \ HL)
+                invTTt = (N-1)*I + HL' * (R \ HL)
 
-Sigma_E,U_E = eigen(invTTt)
-Sigma_E = Diagonal(Sigma_E)
+                Sigma_E,U_E = eigen(invTTt)
+                Sigma_E = Diagonal(Sigma_E)
 
-T = U_E * (sqrt.(Sigma_E) \ U_E')
-#T = sqrt(inv(invTTt))
+                T = U_E * (sqrt.(Sigma_E) \ U_E')
+                #T = sqrt(inv(invTTt))
 
-if debug
-    # ESTKF-sym. square root
-    @test T*T ≈ inv(invTTt)
-end
+                if debug
+                    # ESTKF-sym. square root
+                    @test T*T ≈ inv(invTTt)
+                end
 
-Xap = sqrt(N-1) * L*T * A'
-xa = xf + L * (U_E * (inv(Sigma_E) * U_E' * (HL' * (R \ (y - Hxf)))))
-elseif $method == EnKF
-# EnKF
-sqrtR = sqrt(R)
+                Xap = sqrt(N-1) * L*T * A'
+                xa = xf + L * (U_E * (inv(Sigma_E) * U_E' * (HL' * (R \ (y - Hxf)))))
+            elseif $method == EnKF
+                # EnKF
+                sqrtR = sqrt(R)
 
-# perturbation of observations
-Yp = sqrtR * randn(m,N)
-Y = Yp + repeat(y,inner=(1,N))
+                # perturbation of observations
+                Yp = sqrtR * randn(m,N)
+                Y = Yp + repeat(y,inner=(1,N))
 
-U_F,Sigma_F,V_F = svd(S + Yp)
-Sigma_F = Diagonal(Sigma_F)
+                U_F,Sigma_F,V_F = svd(S + Yp)
+                Sigma_F = Diagonal(Sigma_F)
 
-G_F,Gamma_F,Z_F = svd(S'*(U_F*inv(Sigma_F)))
+                G_F,Gamma_F,Z_F = svd(S'*(U_F*inv(Sigma_F)))
 
-# unclear in manuscript
-#Xap = Xfp * G_F * sqrt(I - Gamma_F*Gamma_F') * G_F'
+                # unclear in manuscript
+                #Xap = Xfp * G_F * sqrt(I - Gamma_F*Gamma_F') * G_F'
 
-Xa = Xf + Xfp * (S' * (U_F * (inv(Sigma_F)^2 * (U_F' * (Y-HXf)))))
+                Xa = Xf + Xfp * (S' * (U_F * (inv(Sigma_F)^2 * (U_F' * (Y-HXf)))))
 
-xa = mean(Xa, dims = 2)
-Xap = Xa - repeat(xa,inner=(1,N))
-end
+                xa = mean(Xa, dims = 2)
+                Xap = Xa - repeat(xa,inner=(1,N))
+            end
 
-Xa = Xap + repeat(xa,inner=(1,N))
+            Xa = Xap + repeat(xa,inner=(1,N))
 
-return Xa,xa
+            return Xa,xa
 
-end # function $method
+        end # function $method
 
-export $method
+        export $method
 
 
-"""
+        """
 Xa,xa = $($loc_method)(Xf,H,y,diagR,part,selectObs,...)
 
 Computes analysis ensemble `Xa` based on forecast ensemble `Xf` using the
@@ -400,49 +400,48 @@ locations of the observations and `L` is a correlation length-scale
 
 See also: compact_locfun
 """
-function $loc_method(Xf,H,y,diagR,part,selectObs;
-                     display = false,
-                     minweight = 1e-8,
-                     HXf = [])
+        function $loc_method(Xf,H,y,diagR,part,selectObs;
+                             display = false,
+                             minweight = 1e-8,
+                             HXf = [])
 
-    # unique element of partition vector
-    p = unique(part);
+            # unique element of partition vector
+            p = unique(part);
 
-    Xa = zeros(size(Xf));
-    xa = zeros(size(Xf,1),1);
+            Xa = zeros(size(Xf));
+            xa = zeros(size(Xf,1),1);
 
-    # do not use isempty here because m might be zero
-    if isequal(HXf,[])
-        HXf = H*Xf;
-    end
+            # do not use isempty here because m might be zero
+            if isequal(HXf,[])
+                HXf = H*Xf;
+            end
 
-    # loop over all zones
-    for i=1:length(p)
-        if display
-            @printf("zone %d out of %d\n",i,length(p));
+            # loop over all zones
+            for i=1:length(p)
+                if display
+                    @printf("zone %d out of %d\n",i,length(p));
+                end
+
+                sel = findall(part .== p[i]);
+                weight = selectObs(sel[1]);
+
+                # restrict to local observations where weight exceeds minweight
+                loc = findall(weight .> minweight);
+                HXfloc = HXf[loc,:];
+                Rloc = Diagonal(diagR[loc] ./ weight[loc]);
+                yloc = y[loc];
+
+                Xa[sel,:],xa[sel] = $method(Xf[sel,:],HXfloc,
+                                            yloc,Rloc, []);
+
+            end
+
+            return Xa,xa
         end
 
-        sel = findall(part .== p[i]);
-        weight = selectObs(sel[1]);
+        export $loc_method
 
-        # restrict to local observations where weight exceeds minweight
-        loc = findall(weight .> minweight);
-        HXfloc = HXf[loc,:];
-        Rloc = Diagonal(diagR[loc] ./ weight[loc]);
-        yloc = y[loc];
-
-        Xa[sel,:],xa[sel] = $method(Xf[sel,:],HXfloc,
-                                    yloc,Rloc, []);
-
-
-    end
-
-    return Xa,xa
-end
-
-export $loc_method
-
-end # @eval begin
+    end # @eval begin
 end # for method ...
 
 
