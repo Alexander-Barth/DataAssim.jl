@@ -5,7 +5,7 @@ using Printf
 using Statistics
 using DIVAnd
 import DIVAnd: pack, unpack
-
+using Optim
 
 include("models.jl")
 include("ensemble.jl")

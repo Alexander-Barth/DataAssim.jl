@@ -114,18 +114,55 @@ function fourDVar(
 
         grad(dx) = gradient(xi,dx,x,Pi,ℳ,yo,R,H,nmax,no)[1];
         b .= grad(zeros(size(xi)));
+
+        #=
         function fun(dx,fdx)
+            #@show "D"
             fdx[:] = b - grad(dx)
         end
 
         dxa,cgsuccess,niter = DIVAnd.conjugategradient(fun,b,tol=tol/norm(b),maxit=innerloops,x0=zeros(size(xi)))
-
         @debug begin
             tmp = zeros(size(xi))
             fun(dxa,tmp)
             tmp = tmp - b
 
-            @show tmp,sum(tmp.^2)
+            @show "DIVAnd.conjugategradient",sum(tmp.^2),niter
+        end
+        =#
+
+        function fg!(F,G,x)
+            @debug "call fg! $(F==nothing) $(G==nothing)"
+            GG = grad(x)
+            if G != nothing
+                # code to compute gradient here
+                # writing the result to the vector G
+                G .= GG
+            end
+            if F != nothing
+                value = 0.5 * (x ⋅ GG) + 0.5 * b ⋅ x
+                return value
+            end
+        end
+
+        result = Optim.optimize(Optim.only_fg!(fg!), zeros(size(b)), ConjugateGradient(),
+                                Optim.Options(g_tol = tol,
+                                              iterations = innerloops,
+                                              allow_f_increases=true,
+                                              store_trace = true,
+                                              show_trace = false))
+        dxa = result.minimizer
+
+        @debug begin
+            @show summary(result)
+            tmp = zeros(size(xi))
+            fg!(nothing,tmp,dxa)
+            @show tmp
+
+            @show innerloops
+            @show Optim.g_converged(result)
+            @show Optim.f_converged(result)
+            @show "optim",sum(tmp.^2),Optim.iterations(result)
         end
 
         # add increment to dxa
