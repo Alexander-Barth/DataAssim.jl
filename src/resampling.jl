@@ -44,12 +44,11 @@ function SUR(w,Ñₑ)
     # generate a random number
     u = rand()/Nₑ
     c = 1
-    @show ŵ
 
     for j = 1:Ñₑ
-        @show c
+        @show u
         while u > ŵ[c]
-            @show c,u,ŵ[c]
+        #while u > ŵ[min(c,end)]
             c = c+1
         end
 
