@@ -4,7 +4,7 @@ using Statistics, Random, Test
 
 function PR(w,Ñₑ)
     Nₑ = length(w)
-    ŵ = similar(w, eltype(w), (Ñₑ,))
+    ŵ = similar(w, eltype(w), (Nₑ,))
     ŵ[1] = w[1]
 
     for j = 2:Nₑ
@@ -33,19 +33,23 @@ k = PR([0,0.1,0.9],10000);
 function SUR(w,Ñₑ)
     Nₑ = length(w)
 
-    ŵ = similar(w, eltype(w), (Ñₑ,))
+    ŵ = similar(w, eltype(w), (Nₑ,))
     ŵ[1] = w[1]
 
     for j = 2:Nₑ
         ŵ[j] = ŵ[j-1] + w[j]
     end
 
+    k = zeros(Int,Ñₑ)
     # generate a random number
     u = rand()/Nₑ
     c = 1
+    @show ŵ
 
     for j = 1:Ñₑ
+        @show c
         while u > ŵ[c]
+            @show c,u,ŵ[c]
             c = c+1
         end
 
@@ -57,4 +61,4 @@ function SUR(w,Ñₑ)
     return k
 end
 
-k = SUR([0,0.1,0.9],10000);
+#k = SUR([0,0.1,0.9],10000);
