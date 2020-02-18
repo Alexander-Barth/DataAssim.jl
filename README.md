@@ -12,8 +12,8 @@
 
 The packages implements various ensemble Kalman Filter data assimilation methods:
 
-* Ensemble Sqare Root Filter (EnSRF)
-* Ensemble Sqare Root Filter with serial processsing of the observations (serialEnSRF)
+* Ensemble Square Root Filter (EnSRF)
+* Ensemble Square Root Filter with serial processing of the observations (serialEnSRF)
 * Ensemble Transform Kalman Filter (ETKF)
 * Ensemble Transform Kalman Filter (EAKF)
 * Singular Evolutive Interpolated Kalman ﬁlter (SEIK)
