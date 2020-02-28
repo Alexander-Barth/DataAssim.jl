@@ -239,12 +239,10 @@ xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
 
 if false
     using PyPlot
-    subplot(2,1,1)
     plot(xt[1,:],"b",label = "true")
     plot(xfree[1,:],"r",label = "free")
     plot(xa[1,:],"g", label = "assim")
     legend()
-    subplot(2,1,2)
-    plot(diag_.J)
+    title("Extended Kalman filter applied to the Lorenz-63 model")
+    savefig("EKF-Lorenz63.svg")
 end
-
