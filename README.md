@@ -10,8 +10,10 @@
 [![documentation latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexander-barth.github.io/DataAssim.jl/latest/)
 
 
-The packages implements various ensemble Kalman Filter data assimilation methods:
+The packages implements various data assimilation methods:
 
+* (Extended) Kalman Filter
+* Incremental 4D-Var
 * Ensemble Square Root Filter (EnSRF)
 * Ensemble Square Root Filter with serial processing of the observations (serialEnSRF)
 * Ensemble Transform Kalman Filter (ETKF)
@@ -21,6 +23,12 @@ The packages implements various ensemble Kalman Filter data assimilation methods
 * Ensemble Kalman Filter (EnKF)
 
 The Julia code is ported from the Matlab/Octave code generated in the frame of the Sangoma project (http://data-assimilation.net/).
+
+
+## Example
+
+An example of using to package is available as a [jupyter-notebook](https://nbviewer.jupyter.org/github/Alexander-Barth/DataAssim.jl/blob/master/examples/example.ipynb).
+
 
 Most of the algorithms are described in the review article:
 
