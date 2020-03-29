@@ -21,228 +21,231 @@ end
 
 Random.seed!(12343)
 
-
 #include("test_shallow_water1D_model.jl")
 
-ℳ = Lorenz63Model(0.01)
-
-@test ℳ(0,[1.,2.,3.]) ≈ [1.1065,  2.241665,  2.9430075] atol=1e-3
-
-x = randn(3,10000)
-for k = 1:size(x,2)-1
-    x[:,k+1] = ℳ(k,x[:,k])
+@testset "Lorenz63Model ajoint" begin
+    ℳ = Lorenz63Model(0.01)
+    @test ℳ(0,[1.,2.,3.]) ≈ [1.1065,  2.241665,  2.9430075] atol=1e-3
+    check(ℳ,3)
 end
 
-check(ℳ,3)
+@testset "model matrix" begin
+    x = randn(4)
+    ℳ = ModelMatrix(2*I)
+    @test ℳ(0,x) ≈ 2*x
+    @test tgl(ℳ,0,0,x) ≈ 2*x
+    @test adj(ℳ,0,0,x) ≈ 2*x
+end
 
-x = randn(4)
-ℳ = ModelMatrix(2*I)
-@test ℳ(0,x) ≈ 2*x
-@test tgl(ℳ,0,0,x) ≈ 2*x
-@test adj(ℳ,0,0,x) ≈ 2*x
-
-
-
-ℳ = ModelFun((t,x,η) -> 2*x,(t,x,dx) -> 2*dx,(t,x,dx) -> 2*dx)
-@test ℳ(0,x) ≈ 2*x
-@test tgl(ℳ,0,0,x) ≈ 2*x
-@test adj(ℳ,0,0,x) ≈ 2*x
-
-
-
-check(ℳ,4)
+@testset "model function" begin
+    x = randn(4)
+    ℳ = ModelFun((t,x,η) -> 2*x,(t,x,dx) -> 2*dx,(t,x,dx) -> 2*dx)
+    @test ℳ(0,x) ≈ 2*x
+    @test tgl(ℳ,0,0,x) ≈ 2*x
+    @test adj(ℳ,0,0,x) ≈ 2*x
+    check(ℳ,4)
+end
 
 
+@testset "4DVar (one observation at IC)" begin
+    n = 2
+    m = 1
+    M = I
+    ℳ = ModelMatrix(M)
+    H = [1 0]
+    𝓗 = ModelMatrix(H)
+    xi = [1; 1]
+    Pi = Matrix(I,n,n)
+    R = Matrix(I,m,m)
 
-# test: one obs at IC
+    nmax = 0
+    yo = randn(m,nmax+1)
 
-n = 2;
-m = 1;
+    # at which time step to assimilate
+    # 1 is IC, 2 -> after first time step
+    no = [1]
 
-#M = @(x) x;
-#MT = @(x) x;
-
-M = I
-model_fun(t,x,η) = M*x;
-model_tgl(t,x,dx) = M*dx;
-model_adj(t,x,dx) = M'*dx;
-ℳ = ModelMatrix(I)
+    xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no)
+    @inferred fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no)
 
 
-H = [1 0];
-𝓗 = ModelMatrix(H)
-xi = [1; 1];
-Pi = Matrix(I,n,n)
-R = Matrix(I,m,m)
 
-nmax = 0;
-yo = randn(m,nmax+1);
+    P = Pi
+    K = P*H'*inv(H*P*H' + R)
+    Pa = P - K*H*P
+    xa2  = xi + K * (yo - H*xi)
 
-# at which time step to assimilate
-# 1 is IC, 2 -> after first time step
-no=[1];
+    # should be ~0
+    @test xa ≈ xa2
 
-xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no);
-@inferred fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no)
+    xa3, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no)
+    # should be ~0
+    @test xa ≈ xa3
 
-#[xa3] = pcg(fun,b,xi);
+    @inferred KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no)
 
-P = Pi;
-K = P*H'*inv(H*P*H' + R);
-Pa = P - K*H*P;
-xa2  = xi + K * (yo - H*xi);
+end
 
-# should be ~0
-#rms(test_4dvar_grad(xi,xa2,Pi,M,yo,R,H,nmax,no),zeros(n,1))
 
-# should be ~0
-@test xa ≈ xa2
+@testset "4DVar (two obs at IC; no evolution)" begin
+    n = 2
+    m = 1
+    xi = [1; 1]
+    Pi = Matrix(I,n,n)
+    M = I
+    ℳ = ModelMatrix(M)
+    R = Matrix(I,m,m)
+    H = [1 0]
+    𝓗 = ModelMatrix(H)
 
-xa3, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no);
-# should be ~0
-@test xa ≈ xa3
 
-@inferred KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no)
+    nmax = 1
+    yo = randn(m,nmax+1)
+    yo = [3 7]
+    no = [1,2]
 
-#-----------------------------------------
-# test: two obs at IC (no evolution)
+    xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no)
 
-nmax = 1;
-yo = randn(m,nmax+1);
-yo = [3 7];
-no = [1,2];
+    P = Pi
+    K = P*H'*inv(H*P*H' + R)
+    P = P - K*H*P
+    xa2  = xi + K * (yo[:,1] - H*xi)
 
-xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no);
+    K = P*H'*inv(H*P*H' + R)
+    xa2  = xa2 + K * (yo[:,2] - H*xa2)
 
-P = Pi;
-K = P*H'*inv(H*P*H' + R);
-P = P - K*H*P;
-xa2  = xi + K * (yo[:,1] - H*xi);
+    # should be ~0
+    @test xa ≈ xa2 atol=1e-14
 
-K = P*H'*inv(H*P*H' + R);
-xa2  = xa2 + K * (yo[:,2] - H*xa2);
+    xa3, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no)
+    # should be ~0
+    @test M*xa ≈ xa3[:,end]  atol=1e-14
 
-# should be ~0
-@test xa ≈ xa2 atol=1e-14
-
-#𝓗
-#𝓜
-xa3, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no);
-# should be ~0
-@test M*xa ≈ xa3[:,end]  atol=1e-14
+end
 
 
 #-----------------------------------------
 # test: one obs at IC, one at next time step (with evolution)
 
-M = [1 -.1; 0.1 1];
-model_fun(t,x,η) = M*x;
-model_tgl(t,x,dx) = M*dx;
-model_adj(t,x,dx) = M'*dx;
-ℳ = ModelMatrix(M)
+@testset "4DVar with evolution" begin
+    n = 2
+    m = 1
+    H = [1 0]
+    𝓗 = ModelMatrix(H)
+    xi = [1; 1]
+    Pi = Matrix(I,n,n)
+    R = Matrix(I,m,m)
+    nmax = 1
+    yo = randn(m,nmax+1)
+    no = [1]
 
-xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no);
-xa2, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no);
-# should be ~0
-@test M*xa ≈ xa2[:,end] atol=1e-10
+    M = [1 -.1; 0.1 1]
+    ℳ = ModelMatrix(M)
 
+    xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no)
+    xa2, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no)
+    # should be ~0
+    @test M*xa ≈ xa2[:,end] atol=1e-10
+
+end
 
 
 #-----------------------------------------
 # test: one obs next time step 2 and one at 5
-no = [2,5];
-nmax = 10;
+@testset "4DVar4" begin
+    n = 2
+    m = 1
+    H = [1 0]
+    𝓗 = ModelMatrix(H)
+    xi = [1; 1]
+    Pi = Matrix(I,n,n)
+    R = Matrix(I,m,m)
+    no = [2,5]
+    yo = randn(m,length(no))
 
-xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no);
-xa2, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no);
-# should be ~0
-@test M^(nmax)*xa ≈ xa2[:,end] atol=1e-10
+    nmax = 10
+    M = [1 -.1; 0.1 1]
+    ℳ = ModelMatrix(M)
 
+    xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no)
+    xa2, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no)
+    # should be ~0
+    @test M^(nmax)*xa ≈ xa2[:,end] atol=1e-10
+end
 
-# twin experiment
+@testset "twin experiment (no evolution)" begin
+    xi = [1; 1]
+    n = 2
+    m = 1
 
-# test: one obs at IC
+    M = I
+    ℳ = ModelMatrix(I)
 
-n = 2;
-m = 1;
+    H = [1 0]
+    xit = [1; 1]
+    Pi = Matrix(I,n,n)
+    R = Matrix(I,m,m)
+    Q = zeros(n,n)
 
-M = I
-model_fun(t,x,η) = M*x;
-model_tgl(t,x,dx) = M*dx;
-model_adj(t,x,dx) = M'*dx;
-ℳ = ModelMatrix(I)
+    nmax = 100
 
-H = [1 0];
-xit = [1; 1];
-Pi = Matrix(I,n,n)
-R = Matrix(I,m,m)
-Q = zeros(n,n);
+    # at which time step to assimilate
+    # 1 is IC, 2 -> after first time step
+    no = 3:nmax
+    method = "4DVar"
 
-nmax = 100;
+    xt,xfree,xa,yt,yo = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method)
 
-# at which time step to assimilate
-# 1 is IC, 2 -> after first time step
-no=3:nmax;
-method = "4DVar";
+    @inferred FreeRun(ℳ,xi,Q,H,nmax,no)
+    @inferred TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method)
 
-xt,xfree,xa,yt,yo = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
-
-@inferred FreeRun(ℳ,xi,Q,H,nmax,no)
-@inferred TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method)
-
-@test_throws ErrorException TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,"best method");
-
-# lorenz63
-
-ℳ = Lorenz63Model(0.01)
-
-nmax = 20;
-no = 5:nmax;
-n = 3;
-sigma=10;
-beta = 8/3;
-rho = 28;
-dt = 0.02;
-
-xit = [5.; 0.; 0.];
-H = [1 0 0];
-Pi = Matrix(3*I,n,n)
-Q = zeros(n,n);
-
-# $$$ model_fun = @(t,x) lorenz63(x,dt);
-# $$$ model_tgl = @(t,x,dx) rungekutta4(0,dx,dt,@(t,dx) [  -sigma, sigma,      0; rho-x(3),    -1,  -x(1); x(2),  x(1),  -beta] * dx);
-# $$$ model_adj = @(t,x,dx) rungekutta4(0,dx,dt,@(t,dx) [  -sigma, sigma,      0; rho-x(3),    -1,  -x(1); x(2),  x(1),  -beta]' * dx);
-# $$$
-# $$$ check_tgl_adj(model,3,0);
-
-method = "4DVar";
-
-#xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
-
-ℳ = Lorenz63Model(0.05)
-
-
-if true
-nmax = 10000;
-#xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
-
-# true run
-xt,yt = FreeRun(ℳ,xit,Q,H,nmax,no);
-
+    @test_throws ErrorException TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,"best method")
 
 end
 
-nmax = 100;
-no = 5:nmax;
-method = "KF";
-xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method);
+@testset "twin experiment: Lorenz 63 " begin
+    m = 1
+    R = Matrix(I,m,m)
 
-if false
-    using PyPlot
-    plot(xt[1,:],"b",label = "true")
-    plot(xfree[1,:],"r",label = "free")
-    plot(xa[1,:],"g", label = "assim")
-    legend()
-    title("Extended Kalman filter applied to the Lorenz-63 model")
-    savefig("EKF-Lorenz63.svg")
+    ℳ = Lorenz63Model(0.01)
+
+    nmax = 20
+    no = 5:nmax
+    n = 3
+
+    xit = [5.; 0.; 0.]
+    H = [1 0 0]
+    Pi = Matrix(3*I,n,n)
+    Q = zeros(n,n)
+
+    method = "4DVar"
+    xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method)
+    @test norm(xt[:,end] - xa[:,end]) ≈ 0 atol=3
+
+    ℳ = Lorenz63Model(0.05)
+
+    if true
+        nmax = 10000
+        #xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method)
+
+        # true run
+        xt,yt = FreeRun(ℳ,xit,Q,H,nmax,no)
+    end
+
+    nmax = 100
+    no = 5:nmax
+    method = "KF"
+    xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method)
+
+    @test norm(xt[:,end] - xa[:,end]) ≈ 0 atol=3
+
+    if false
+        using PyPlot
+        plot(xt[1,:],"b",label = "true")
+        plot(xfree[1,:],"r",label = "free")
+        plot(xa[1,:],"g", label = "assim")
+        legend()
+        title("Extended Kalman filter applied to the Lorenz-63 model")
+        savefig("EKF-Lorenz63.svg")
+    end
 end

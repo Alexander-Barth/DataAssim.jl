@@ -84,6 +84,4 @@ Xal,xal = DataAssim.local_ETKF2(Xf,H,y,diag(R),part,selectObs)
 @test DataAssim.compact_locfun(3) ≈ 0 atol=tol
 end
 
-@testset "Variational methods" begin
-    include("test_4dvar_assim.jl")
-end
+include("test_4dvar_assim.jl")
