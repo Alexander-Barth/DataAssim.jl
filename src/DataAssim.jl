@@ -1,3 +1,8 @@
+"""
+Data Assimiation module
+
+see https://alexander-barth.github.io/DataAssim.jl/latest/
+"""
 module DataAssim
 using Test
 using LinearAlgebra
