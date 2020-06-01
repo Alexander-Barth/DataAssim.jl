@@ -238,6 +238,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 
                 Gamma_A = sqrtGamma_A.^2 / (N-1)
                 Gamma_A = Gamma_A[1:N-1,1:N-1]
+                Gamma_A = convert(Matrix, Gamma_A)
                 Z_A = Z_A[:,1:N-1]
 
                 if debug
