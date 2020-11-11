@@ -1,9 +1,8 @@
 # DataAssim
 
-[![Build Status Linux and macOS](https://travis-ci.org/Alexander-Barth/DataAssim.jl.svg?branch=master)](https://travis-ci.org/Alexander-Barth/DataAssim.jl)
+[![Build Status](https://github.com/Alexander-Barth/DataAssim.jl/workflows/CI/badge.svg)](https://github.com/Alexander-Barth/DataAssim.jl/actions)
 [![Build Status Windows](https://ci.appveyor.com/api/projects/status/github/Alexander-Barth/DataAssim.jl?branch=master&svg=true)](https://ci.appveyor.com/project/Alexander-Barth/dataassim-jl)
 
-[![Coverage Status](https://coveralls.io/repos/Alexander-Barth/DataAssim.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/Alexander-Barth/DataAssim.jl?branch=master)
 [![codecov.io](http://codecov.io/github/Alexander-Barth/DataAssim.jl/coverage.svg?branch=master)](http://codecov.io/github/Alexander-Barth/DataAssim.jl?branch=master)
 
 <!--[![documentation stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexander-barth.github.io/DataAssim.jl/stable/)-->
