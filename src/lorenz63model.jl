@@ -15,9 +15,11 @@ Lorenz, 1963 model[1] integrated with a 2nd order Runge-Kutta scheme.
 """
 Lorenz63Model(dt,σ=10.,β = 8/3.,ρ = 28.) = Lorenz63Model(dt,σ,β,ρ)
 
-function (ℳ::Lorenz63Model)(t,x,eta = zeros(eltype(x),size(x)))
-    return rungekutta2(t,x,ℳ.dt,(t,x) -> lorenz63_dxdt(ℳ.σ,ℳ.β,ℳ.ρ,x)) + eta
+function (ℳ::Lorenz63Model)(t,x)
+    return rungekutta2(t,x,ℳ.dt,(t,x) -> lorenz63_dxdt(ℳ.σ,ℳ.β,ℳ.ρ,x))
 end
+
+(ℳ::Lorenz63Model)(t,x,eta) = ℳ(t,x) + eta
 
 function tgl(ℳ::Lorenz63Model,t,x,dx::AbstractVector)
     f_tgl(t,x,dx)  = lorenz63_dxdt_tgl(ℳ.σ,ℳ.β,ℳ.ρ,x,dx)
@@ -34,9 +36,12 @@ end
 
 function lorenz63_dxdt(σ,β,ρ,x)
     dxdt = similar(x)
-    dxdt[1] = σ*(x[2]-x[1])
-    dxdt[2] = x[1]*(ρ-x[3]) - x[2]
-    dxdt[3] = x[1]*x[2] - β * x[3]
+    #dxdt[1] = σ*(x[2]-x[1])
+    #dxdt[2] = x[1]*(ρ-x[3]) - x[2]
+    #dxdt[3] = x[1]*x[2] - β * x[3]
+    dxdt = [σ*(x[2]-x[1]),
+            x[1]*(ρ-x[3]) - x[2],
+            x[1]*x[2] - β * x[3]]
     return dxdt
 end
 
