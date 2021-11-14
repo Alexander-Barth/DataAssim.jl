@@ -1,5 +1,4 @@
 [deps]
-DIVAnd = "efc8151c-67de-5a8f-9a35-d8f54746ae9d"
 DataAssim = "cf87cc76-4620-5dad-9f0a-7411b2d39d18"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
