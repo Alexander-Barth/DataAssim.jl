@@ -70,8 +70,7 @@ function gradient(xi,dx0,x,Pi,ℳ,yo,R,H,nmax,no)
         end
     end
 
-    grad = inv(Pi)*(xi - (dx[:,1]+x[:,1])) + lambda[:,1];
-    grad = -2 * grad;
+    grad = 2 * inv(Pi)*((dx[:,1]+x[:,1]) - xi) - 2 * lambda[:,1];
 
     return grad,lambda
 end
