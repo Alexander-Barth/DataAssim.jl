@@ -22,9 +22,12 @@ The packages implements various data assimilation methods:
 The Julia code is ported from the Matlab/Octave code generated in the frame of the Sangoma project (http://data-assimilation.net/).
 
 
+
 ## Example
 
 An example of using to package is available as a [jupyter-notebook](https://nbviewer.jupyter.org/github/Alexander-Barth/DataAssim.jl/blob/master/examples/example.ipynb).
+
+https://user-images.githubusercontent.com/9881475/158639340-fe7ae9d7-20ee-4c73-9f02-ade9b89685fa.mp4
 
 
 ## Reference
