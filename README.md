@@ -27,6 +27,16 @@ The Julia code is ported from the Matlab/Octave code generated in the frame of t
 
 An example of using to package is available as a [jupyter-notebook](https://nbviewer.jupyter.org/github/Alexander-Barth/DataAssim.jl/blob/master/examples/example.ipynb).
 
+
+
+### Kalman Filter
+
+The example below is the result of the Kalman Filter. The red elipse corresponds to the model forecast (Gaussian probability density function), the blue elipse corresponds to the observations and the purple elipse is the analysis (after assimilation).
+
+https://user-images.githubusercontent.com/9881475/161507401-c40525b1-7ffb-4297-8838-6abab1bca330.mp4
+
+### Ensemble Transform Kalman Filter
+
 The example below is the result of the Ensemble Transform Kalman Filter. The red dots corresponds to the model ensemble, the blue elipse is the Gaussian probability density function of the observations and the purple dots is the model ensemble after analysis.
 
 https://user-images.githubusercontent.com/9881475/158639340-fe7ae9d7-20ee-4c73-9f02-ade9b89685fa.mp4
