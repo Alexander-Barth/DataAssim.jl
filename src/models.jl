@@ -24,7 +24,8 @@ mutable struct ModelMatrix{T <: Union{AbstractMatrix,UniformScaling}} <: Abstrac
     M::T
 end
 
-(M::ModelMatrix)(t,x,η = zeros(size(x))) = M.M*x + η
+(M::ModelMatrix{T})(t,x,η = zeros(size(M.M,1))) where T <: AbstractMatrix = M.M*x + η
+(M::ModelMatrix{T})(t,x,η = zeros(length(x))) where T <: UniformScaling = M.M*x + η
 tgl(M::ModelMatrix,t,x,dx::AbstractVecOrMat) = M.M*dx
 adj(M::ModelMatrix,t,x,dx::AbstractVecOrMat) = M.M'*dx
 

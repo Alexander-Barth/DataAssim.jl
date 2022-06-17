@@ -173,6 +173,33 @@ end
     @test M^(nmax)*xa ≈ xa2[:,end] atol=1e-10
 end
 
+#-----------------------------------------
+# test: one obs next time step 2 and one at 5
+@testset "KalmanFilter Function API" begin
+    n = 2
+    m = 1
+    H = [1 0]
+    𝓗 = ModelMatrix(H)
+    xi = [1; 1]
+    Pi = Matrix(I,n,n)
+    R_matrix = Matrix(I,m,m)
+    no = [2,5]
+    yo_matrix = randn(m,length(no))
+
+    nmax = 10
+    M = [1 -.1; 0.1 1]
+    ℳ = ModelMatrix(M)
+    yo = n -> yo_matrix[:,n]
+    R = n -> R_matrix
+
+    xa, = fourDVar(xi,Pi,ℳ,yo_matrix,R_matrix,H,nmax,no)
+    xa2, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),
+                        yo,R,𝓗,nmax,no)
+    # should be ~0
+    @test M^(nmax)*xa ≈ xa2[:,end] atol=1e-10
+end
+
+
 @testset "twin experiment (no evolution)" begin
     xi = [1; 1]
     n = 2
