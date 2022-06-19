@@ -1,7 +1,7 @@
 # nmax: total number of integration of the model
 # x of size n x (nmax+1)
 
-function FreeRun!(ℳ,xi,Q,H,nmax,no,x,Hx)
+function FreeRun!(ℳ,xi,Q,𝓗::AbstractModel,nmax,no,x,Hx)
     obsindex = 1;
 
     for n=1:nmax+1
@@ -13,7 +13,7 @@ function FreeRun!(ℳ,xi,Q,H,nmax,no,x,Hx)
 
         if obsindex <= length(no) && n == no[obsindex]
             # extract observations
-            Hx[:,obsindex] = H*x[:,n];
+            Hx[obsindex] = 𝓗(obsindex,x[:,n])
             obsindex = obsindex +1;
         end
     end
@@ -23,34 +23,34 @@ end
     x,Hx = FreeRun(ℳ,xi,Q,H,nmax,no)
 
 Performs a free-run with the model `ℳ` and `nmax` time-steps starting at the
-initial condition `xi`. Observations at the time steps given in `no` are 
+initial condition `xi`. Observations at the time steps given in `no` are
 extracted with the observation operator `H`.
 """
-function FreeRun(ℳ,xi,Q,H,nmax,no)
+function FreeRun(ℳ,xi,Q,𝓗,nmax,no)
     T = eltype(xi)
     x = zeros(T,size(xi,1),nmax+1);
-    Hx = zeros(T,size(H,1),length(no))
-    FreeRun!(ℳ,xi,Q,H,nmax,no,x,Hx)
+    Hx = Vector{Vector{T}}(undef,length(no))
+    FreeRun!(ℳ,xi,Q,𝓗,nmax,no,x,Hx)
     return x,Hx
 end
 
 
-function costfun(xi,Pi,ℳ,xa,yo,R,H,nmax,no,x,Hx)
-    FreeRun!(ℳ,xa,[],H,nmax,no,x,Hx);
+function costfun(xi,Pi,ℳ,xa,yo,R,𝓗,nmax,no,x,Hx)
+    FreeRun!(ℳ,xa,[],𝓗,nmax,no,x,Hx);
 
     # cost function
     tmp = x[:,1] - xa;
     J = tmp' * (Pi \ tmp);
-    for i = 1:size(yo,2)
-        tmp = yo[:,i] - Hx[:,i];
-        J = J + tmp' * (R \ tmp);
+    for i = 1:length(no)
+        tmp = yo(i) - Hx[i];
+        J = J + tmp' * (R(i) \ tmp);
     end
 
     return J
 end
 
 
-function gradient(xi,dx0,x,Pi,ℳ,yo,R,H,nmax,no)
+function gradient(xi,dx0,x,Pi,ℳ,yo,R,𝓗,nmax,no)
 
     dx = zeros(size(xi,1),nmax+1);
     dx[:,1] = dx0;
@@ -65,7 +65,8 @@ function gradient(xi,dx0,x,Pi,ℳ,yo,R,H,nmax,no)
         lambda[:,n] = adj(ℳ,n,x[:,n],lambda[:,n+1]);
 
         if obsindex > 0 && n == no[obsindex]
-            lambda[:,n] = lambda[:,n] + H'*inv(R)*(yo[:,obsindex] - H*(dx[:,n]+x[:,n] ));
+            lambda[:,n] = lambda[:,n] +
+                adj(𝓗,n,x[:,n],inv(R(obsindex))*(yo(obsindex) - tgl(𝓗,n,x[:,n],dx[:,n]+x[:,n])))
             obsindex = obsindex - 1;
         end
     end
@@ -83,36 +84,32 @@ end
             tol = 1e-5)
 
 Incremental 4D-Var with the model `ℳ` and `nmax` time-steps starting at the
-initial condition `xi` and error covariance `Pi` with the specified numbers of inner 
+initial condition `xi` and error covariance `Pi` with the specified numbers of inner
 and outer loops.
 Observations `yo` (and error covariance `R`) at the time steps given in `no` are
 assimilated with the observation operator `H`.
 """
 function fourDVar(
-    xi::AbstractVector,Pi,ℳ,yo,R,H,nmax,no;
+    xi::AbstractVector,Pi,ℳ,yo,R,𝓗,nmax,no;
     innerloops = 10,
     outerloops = 2,
     tol = 1e-5)
 
-#function fourDVar(xi::AbstractVector,Pi,ℳ,yo,R,H,nmax,no)
-#    innerloops = 10
-#    outerloops = 2
-#    tol = 1e-5
-
     xa = float(xi)
+    T = eltype(xa)
     x = zeros(size(xi,1),nmax+1);
-    Hx = zeros(size(yo,1),nmax+1);
+    Hx = Vector{Vector{T}}(undef,length(no))
 
     J = zeros(outerloops)
     b = zeros(size(xi))
 
     for i=1:outerloops
 
-        J[i] = costfun(xi,Pi,ℳ,xa,yo,R,H,nmax,no,x,Hx);
+        J[i] = costfun(xi,Pi,ℳ,xa,yo,R,𝓗,nmax,no,x,Hx);
 
         # dx increment relative to xi
 
-        grad(dx) = gradient(xi,dx,x,Pi,ℳ,yo,R,H,nmax,no)[1];
+        grad(dx) = gradient(xi,dx,x,Pi,ℳ,yo,R,𝓗,nmax,no)[1];
         b .= grad(zeros(size(xi)));
 
         #=
@@ -171,5 +168,3 @@ function fourDVar(
 
     return xa,J#,Jfun
 end
-
-

@@ -17,8 +17,6 @@ function check(ℳ::AbstractModel,n,t = 0,ϵ = 1e-5)
     @test tgl(ℳ,t,x,dX[:,1]) ≈ MdX[:,1]
 end
 
-
-
 Random.seed!(12343)
 
 #include("test_shallow_water1D_model.jl")
@@ -46,7 +44,6 @@ end
     check(ℳ,4)
 end
 
-
 @testset "4DVar (one observation at IC)" begin
     n = 2
     m = 1
@@ -60,15 +57,15 @@ end
 
     nmax = 0
     yo = randn(m,nmax+1)
+    yo_ = i -> yo[:,i]
+    R_ = i -> R
 
     # at which time step to assimilate
     # 1 is IC, 2 -> after first time step
     no = [1]
 
-    xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no)
-    @inferred fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no)
-
-
+    xa, = fourDVar(xi,Pi,ℳ,yo_,R_,𝓗,nmax,no)
+#    @inferred fourDVar(xi,Pi,ℳ,yo,R,𝓗,nmax,no)
 
     P = Pi
     K = P*H'*inv(H*P*H' + R)
@@ -78,7 +75,7 @@ end
     # should be ~0
     @test xa ≈ xa2
 
-    xa3, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no)
+    xa3, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo_,R_,𝓗,nmax,no)
     # should be ~0
     @test xa ≈ xa3
 
@@ -94,35 +91,34 @@ end
     Pi = Matrix(I,n,n)
     M = I
     ℳ = ModelMatrix(M)
-    R = Matrix(I,m,m)
+    R = i -> Matrix(I,m,m)
     H = [1 0]
     𝓗 = ModelMatrix(H)
 
 
     nmax = 1
-    yo = randn(m,nmax+1)
-    yo = [3 7]
+    yo = i -> (i == 1 ? [3] : [7])
+    #yo = [3 7]
     no = [1,2]
 
-    xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no)
+    xa, = fourDVar(xi,Pi,ℳ,yo,R,𝓗,nmax,no)
 
     P = Pi
-    K = P*H'*inv(H*P*H' + R)
+    K = P*H'*inv(H*P*H' + R(1))
     P = P - K*H*P
-    xa2  = xi + K * (yo[:,1] - H*xi)
+    xa2  = xi + K * (yo(1) - H*xi)
 
-    K = P*H'*inv(H*P*H' + R)
-    xa2  = xa2 + K * (yo[:,2] - H*xa2)
+    K = P*H'*inv(H*P*H' + R(2))
+    xa2  = xa2 + K * (yo(2) - H*xa2)
 
     # should be ~0
     @test xa ≈ xa2 atol=1e-14
 
-    xa3, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no)
+    xa3, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,𝓗,nmax,no)
     # should be ~0
     @test M*xa ≈ xa3[:,end]  atol=1e-14
 
 end
-
 
 #-----------------------------------------
 # test: one obs at IC, one at next time step (with evolution)
@@ -134,16 +130,17 @@ end
     𝓗 = ModelMatrix(H)
     xi = [1; 1]
     Pi = Matrix(I,n,n)
-    R = Matrix(I,m,m)
+    R = i -> Matrix(I,m,m)
     nmax = 1
-    yo = randn(m,nmax+1)
+    yo_ = randn(m,nmax+1)
+    yo = i -> yo_[:,i]
     no = [1]
 
     M = [1 -.1; 0.1 1]
     ℳ = ModelMatrix(M)
 
-    xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no)
-    xa2, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no)
+    xa, = fourDVar(xi,Pi,ℳ,yo,R,𝓗,nmax,no)
+    xa2, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,𝓗,nmax,no)
     # should be ~0
     @test M*xa ≈ xa2[:,end] atol=1e-10
 
@@ -159,19 +156,21 @@ end
     𝓗 = ModelMatrix(H)
     xi = [1; 1]
     Pi = Matrix(I,n,n)
-    R = Matrix(I,m,m)
+    R = i -> Matrix(I,m,m)
     no = [2,5]
-    yo = randn(m,length(no))
+    yo_ = randn(m,length(no))
+    yo = i -> yo_[:,i]
 
     nmax = 10
     M = [1 -.1; 0.1 1]
     ℳ = ModelMatrix(M)
 
-    xa, = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no)
-    xa2, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no)
+    xa, = fourDVar(xi,Pi,ℳ,yo,R,𝓗,nmax,no)
+    xa2, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,𝓗,nmax,no)
     # should be ~0
     @test M^(nmax)*xa ≈ xa2[:,end] atol=1e-10
 end
+
 
 #-----------------------------------------
 # test: one obs next time step 2 and one at 5
@@ -192,16 +191,15 @@ end
     yo = n -> yo_matrix[:,n]
     R = n -> R_matrix
 
-    xa, = fourDVar(xi,Pi,ℳ,yo_matrix,R_matrix,H,nmax,no)
+    xa, = fourDVar(xi,Pi,ℳ,yo,R,𝓗,nmax,no)
     xa2, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),
                         yo,R,𝓗,nmax,no)
     # should be ~0
     @test M^(nmax)*xa ≈ xa2[:,end] atol=1e-10
 end
 
-
 @testset "twin experiment (no evolution)" begin
-    xi = [1; 1]
+    xi = [1.; 1.]
     n = 2
     m = 1
 
@@ -209,9 +207,10 @@ end
     ℳ = ModelMatrix(I)
 
     H = [1 0]
-    xit = [1; 1]
+    𝓗 = ModelMatrix(H)
+    xit = [1.; 1.]
     Pi = Matrix(I,n,n)
-    R = Matrix(I,m,m)
+    R = i -> Matrix(I,m,m)
     Q = zeros(n,n)
 
     nmax = 100
@@ -221,18 +220,19 @@ end
     no = 3:nmax
     method = "4DVar"
 
-    xt,xfree,xa,yt,yo = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method)
+    xt,xfree,xa,yt,yo = TwinExperiment(ℳ,xit,Pi,Q,R,𝓗,nmax,no,method)
 
-    @inferred FreeRun(ℳ,xi,Q,H,nmax,no)
-    @inferred TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method)
+    @inferred FreeRun(ℳ,xi,Q,𝓗,nmax,no)
+    @inferred TwinExperiment(ℳ,xit,Pi,Q,R,𝓗,nmax,no,method)
 
-    @test_throws ErrorException TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,"best method")
+    @test_throws ErrorException TwinExperiment(ℳ,xit,Pi,Q,R,𝓗,nmax,no,"best method")
 
 end
 
+
 @testset "twin experiment: Lorenz 63 " begin
     m = 1
-    R = Matrix(I,m,m)
+    R = i -> Matrix(I,m,m)
 
     ℳ = Lorenz63Model(0.01)
 
@@ -242,11 +242,12 @@ end
 
     xit = [5.; 0.; 0.]
     H = [1 0 0]
+    𝓗 = ModelMatrix(H)
     Pi = Matrix(3*I,n,n)
     Q = zeros(n,n)
 
     method = "4DVar"
-    xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method)
+    xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,𝓗,nmax,no,method)
     @test norm(xt[:,end] - xa[:,end]) ≈ 0 atol=3
 
     ℳ = Lorenz63Model(0.05)
@@ -256,13 +257,13 @@ end
         #xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method)
 
         # true run
-        xt,yt = FreeRun(ℳ,xit,Q,H,nmax,no)
+        xt,yt = FreeRun(ℳ,xit,Q,𝓗,nmax,no)
     end
 
     nmax = 100
     no = 5:nmax
     method = "KF"
-    xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,no,method)
+    xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,𝓗,nmax,no,method)
 
     @test norm(xt[:,end] - xa[:,end]) ≈ 0 atol=3
 
@@ -276,3 +277,4 @@ end
         savefig("EKF-Lorenz63.svg")
     end
 end
+
