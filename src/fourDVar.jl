@@ -42,8 +42,8 @@ function costfun(xi,Pi,ℳ,xa,yo,R,𝓗,nmax,no,x,Hx)
     tmp = x[:,1] - xa;
     J = tmp' * (Pi \ tmp);
     for i = 1:length(no)
-        tmp = yo(i) - Hx[i];
-        J = J + tmp' * (R(i) \ tmp);
+        tmp = yo[i] - Hx[i];
+        J = J + tmp' * (R[i] \ tmp);
     end
 
     return J
@@ -66,7 +66,7 @@ function gradient(xi,dx0,x,Pi,ℳ,yo,R,𝓗,nmax,no)
 
         if obsindex > 0 && n == no[obsindex]
             lambda[:,n] = lambda[:,n] +
-                adj(𝓗,n,x[:,n],inv(R(obsindex))*(yo(obsindex) - tgl(𝓗,n,x[:,n],dx[:,n]+x[:,n])))
+                adj(𝓗,n,x[:,n],inv(R[obsindex])*(yo[obsindex] - tgl(𝓗,n,x[:,n],dx[:,n]+x[:,n])))
             obsindex = obsindex - 1;
         end
     end
@@ -90,7 +90,7 @@ Observations `yo` (and error covariance `R`) at the time steps given in `no` are
 assimilated with the observation operator `H`.
 """
 function fourDVar(
-    xi::AbstractVector,Pi,ℳ,yo,R,𝓗,nmax,no;
+    xi::AbstractVector,Pi,ℳ,yo::AbstractVector,R::AbstractVector,𝓗,nmax,no;
     innerloops = 10,
     outerloops = 2,
     tol = 1e-5)

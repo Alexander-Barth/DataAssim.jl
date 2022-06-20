@@ -12,6 +12,7 @@ using DIVAnd
 import DIVAnd: pack, unpack
 using Optim
 
+include("types.jl")
 include("models.jl")
 include("ensemble.jl")
 include("fourDVar.jl")

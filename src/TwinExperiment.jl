@@ -13,12 +13,11 @@ xi = xit + cholesky(Pi).U * randn(n)
 
 T = eltype(xit)
 # add perturbations to obs
-yo_matrix = Vector{Vector{T}}(undef,length(no))
+yo = Vector{Vector{T}}(undef,length(no))
 for i = 1:length(no)
   m = length(yt[i])
-  yo_matrix[i] = yt[i] + cholesky(R(i)).U * randn(m);
+  yo[i] = yt[i] + cholesky(R[i]).U * randn(m);
 end
-yo = i -> yo_matrix[i]
 
 # free run
 xfree,yfree = FreeRun(ℳ,xi,Q,H,nmax,no);

@@ -42,6 +42,15 @@ end
 
 
 function KalmanFilter(xi,Pi,ℳ,Q,yo::Function,R::Function,𝓗::AbstractModel,nmax,no)
+    T = eltype(xi)
+    KalmanFilter(
+        xi,Pi,ℳ,Q,
+        VectorFun(T,length(no),yo),
+        VectorFun(T,length(no),R),
+        𝓗::AbstractModel,nmax,no)
+end
+
+function KalmanFilter(xi,Pi,ℳ,Q,yo::AbstractVector,R::AbstractVector,𝓗::AbstractModel,nmax,no)
     x = zeros(size(xi,1),nmax+1);
     P = zeros(size(xi,1),size(xi,1),nmax+1);
     obsindex = 1;
@@ -59,8 +68,8 @@ function KalmanFilter(xi,Pi,ℳ,Q,yo::Function,R::Function,𝓗::AbstractModel,n
 
         if obsindex <= length(no) && n == no[obsindex]
             xn = @view x[:,n]
-            Rn = R(obsindex);
-            yon = yo(obsindex)
+            Rn = R[obsindex]
+            yon = yo[obsindex]
             HP = zeros(eltype(P),length(yon),length(xi))
             HPH = zeros(eltype(P),length(yon),length(yon))
             for i = 1:length(xi)
@@ -73,7 +82,7 @@ function KalmanFilter(xi,Pi,ℳ,Q,yo::Function,R::Function,𝓗::AbstractModel,n
 
             # assimilation
             K = HP' * inv(HPH + Rn)
-            x[:,n]  = x[:,n] + K * (yo(obsindex) - Hx)
+            x[:,n]  = x[:,n] + K * (yo[obsindex] - Hx)
             P[:,:,n] = P[:,:,n] - K*HP
 
             obsindex = obsindex + 1

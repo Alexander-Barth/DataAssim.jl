@@ -53,34 +53,25 @@ end
     𝓗 = ModelMatrix(H)
     xi = [1; 1]
     Pi = Matrix(I,n,n)
-    R = Matrix(I,m,m)
 
     nmax = 0
-    yo = randn(m,nmax+1)
-    yo_ = i -> yo[:,i]
-    R_ = i -> R
+    yo = [randn(m) for i = 1:nmax+1]
+    R = fill(Matrix(I,m,m),nmax+1)
 
     # at which time step to assimilate
     # 1 is IC, 2 -> after first time step
     no = [1]
 
-    xa, = fourDVar(xi,Pi,ℳ,yo_,R_,𝓗,nmax,no)
-#    @inferred fourDVar(xi,Pi,ℳ,yo,R,𝓗,nmax,no)
+    xa, = fourDVar(xi,Pi,ℳ,yo,R,𝓗,nmax,no)
 
     P = Pi
-    K = P*H'*inv(H*P*H' + R)
+    K = P*H'*inv(H*P*H' + R[1])
     Pa = P - K*H*P
-    xa2  = xi + K * (yo - H*xi)
-
-    # should be ~0
+    xa2  = xi + K * (yo[1] - H*xi)
     @test xa ≈ xa2
 
-    xa3, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo_,R_,𝓗,nmax,no)
-    # should be ~0
+    xa3, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,𝓗,nmax,no)
     @test xa ≈ xa3
-
-    @inferred KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,H,nmax,no)
-
 end
 
 
@@ -91,33 +82,29 @@ end
     Pi = Matrix(I,n,n)
     M = I
     ℳ = ModelMatrix(M)
-    R = i -> Matrix(I,m,m)
     H = [1 0]
     𝓗 = ModelMatrix(H)
 
 
     nmax = 1
-    yo = i -> (i == 1 ? [3] : [7])
-    #yo = [3 7]
+    yo = [[3], [7]]
+    R = fill(Matrix(I,m,m),nmax+1)
     no = [1,2]
 
     xa, = fourDVar(xi,Pi,ℳ,yo,R,𝓗,nmax,no)
 
     P = Pi
-    K = P*H'*inv(H*P*H' + R(1))
+    K = P*H'*inv(H*P*H' + R[1])
     P = P - K*H*P
-    xa2  = xi + K * (yo(1) - H*xi)
+    xa2  = xi + K * (yo[1] - H*xi)
 
-    K = P*H'*inv(H*P*H' + R(2))
-    xa2  = xa2 + K * (yo(2) - H*xa2)
+    K = P*H'*inv(H*P*H' + R[2])
+    xa2  = xa2 + K * (yo[2] - H*xa2)
 
-    # should be ~0
     @test xa ≈ xa2 atol=1e-14
 
     xa3, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),yo,R,𝓗,nmax,no)
-    # should be ~0
     @test M*xa ≈ xa3[:,end]  atol=1e-14
-
 end
 
 #-----------------------------------------
@@ -130,11 +117,11 @@ end
     𝓗 = ModelMatrix(H)
     xi = [1; 1]
     Pi = Matrix(I,n,n)
-    R = i -> Matrix(I,m,m)
     nmax = 1
-    yo_ = randn(m,nmax+1)
-    yo = i -> yo_[:,i]
     no = [1]
+
+    yo = [randn(m) for i = 1:nmax+1]
+    R = fill(Matrix(I,m,m),nmax+1)
 
     M = [1 -.1; 0.1 1]
     ℳ = ModelMatrix(M)
@@ -145,6 +132,9 @@ end
     @test M*xa ≈ xa2[:,end] atol=1e-10
 
 end
+
+
+
 
 
 #-----------------------------------------
@@ -158,8 +148,9 @@ end
     Pi = Matrix(I,n,n)
     R = i -> Matrix(I,m,m)
     no = [2,5]
-    yo_ = randn(m,length(no))
-    yo = i -> yo_[:,i]
+
+    yo = [randn(m) for i = 1:length(no)]
+    R = fill(Matrix(I,m,m),length(no))
 
     nmax = 10
     M = [1 -.1; 0.1 1]
@@ -171,7 +162,6 @@ end
     @test M^(nmax)*xa ≈ xa2[:,end] atol=1e-10
 end
 
-
 #-----------------------------------------
 # test: one obs next time step 2 and one at 5
 @testset "KalmanFilter Function API" begin
@@ -181,20 +171,18 @@ end
     𝓗 = ModelMatrix(H)
     xi = [1; 1]
     Pi = Matrix(I,n,n)
-    R_matrix = Matrix(I,m,m)
     no = [2,5]
-    yo_matrix = randn(m,length(no))
 
     nmax = 10
     M = [1 -.1; 0.1 1]
     ℳ = ModelMatrix(M)
-    yo = n -> yo_matrix[:,n]
-    R = n -> R_matrix
+
+    yo = [randn(m) for i = 1:length(no)]
+    R = fill(Matrix(I,m,m),length(no))
 
     xa, = fourDVar(xi,Pi,ℳ,yo,R,𝓗,nmax,no)
     xa2, = KalmanFilter(xi,Pi,ℳ,zeros(size(Pi)),
                         yo,R,𝓗,nmax,no)
-    # should be ~0
     @test M^(nmax)*xa ≈ xa2[:,end] atol=1e-10
 end
 
@@ -218,6 +206,8 @@ end
     # at which time step to assimilate
     # 1 is IC, 2 -> after first time step
     no = 3:nmax
+    R = fill(Matrix(I,m,m),length(no))
+
     method = "4DVar"
 
     xt,xfree,xa,yt,yo = TwinExperiment(ℳ,xit,Pi,Q,R,𝓗,nmax,no,method)
@@ -230,15 +220,17 @@ end
 end
 
 
+
 @testset "twin experiment: Lorenz 63 " begin
     m = 1
-    R = i -> Matrix(I,m,m)
 
     ℳ = Lorenz63Model(0.01)
 
     nmax = 20
     no = 5:nmax
     n = 3
+    R = fill(Matrix(I,m,m),length(no))
+
 
     xit = [5.; 0.; 0.]
     H = [1 0 0]
@@ -262,6 +254,7 @@ end
 
     nmax = 100
     no = 5:nmax
+    R = fill(Matrix(I,m,m),length(no))
     method = "KF"
     xt,xfree,xa,yt,yo,diag_ = TwinExperiment(ℳ,xit,Pi,Q,R,𝓗,nmax,no,method)
 
@@ -277,4 +270,5 @@ end
         savefig("EKF-Lorenz63.svg")
     end
 end
+
 
