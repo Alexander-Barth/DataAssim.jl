@@ -6,7 +6,7 @@ for method = [:EnSRF, :EAKF, :ETKF, :ETKF2, :SEIK, :ESTKF, :serialEnSRF, :EnKF]
 
     @eval begin
         """
-  Xa,xa = $($method)(Xf,HXf,y,R,H,...)
+    Xa,xa = $($method)(Xf,HXf,y,R,H,...)
 
 Computes analysis ensemble `Xa` based on forecast ensemble `Xf`
 and observations `y` using the $($method) ensemble scheme.
@@ -362,7 +362,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 
 
         """
-Xa,xa = $($loc_method)(Xf,H,y,diagR,part,selectObs,...)
+    Xa,xa = $($loc_method)(Xf,H,y,diagR,part,selectObs,...)
 
 Computes analysis ensemble `Xa` based on forecast ensemble `Xf` using the
 observation `y` using the local $($method).
