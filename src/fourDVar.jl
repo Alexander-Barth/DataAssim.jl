@@ -66,12 +66,12 @@ function gradient(xi,dx0,x,Pi,ℳ,yo,R,𝓗,nmax,no)
 
         if obsindex > 0 && n == no[obsindex]
             lambda[:,n] = lambda[:,n] +
-                adj(𝓗,n,x[:,n],inv(R[obsindex])*(yo[obsindex] - tgl(𝓗,n,x[:,n],dx[:,n]+x[:,n])))
+                adj(𝓗,n,x[:,n],R[obsindex] \ (yo[obsindex] - tgl(𝓗,n,x[:,n],dx[:,n]+x[:,n])))
             obsindex = obsindex - 1;
         end
     end
 
-    grad = 2 * inv(Pi)*((dx[:,1]+x[:,1]) - xi) - 2 * lambda[:,1];
+    grad = 2 * (Pi \ ((dx[:,1]+x[:,1]) - xi)) - 2 * lambda[:,1];
 
     return grad,lambda
 end
