@@ -8,8 +8,8 @@ using Test
 using LinearAlgebra
 using Printf
 using Statistics
-using DIVAnd
-import DIVAnd: pack, unpack
+#using DIVAnd
+#import DIVAnd: pack, unpack
 using Optim
 
 include("types.jl")

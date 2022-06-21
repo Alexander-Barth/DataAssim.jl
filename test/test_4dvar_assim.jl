@@ -1,7 +1,7 @@
 using LinearAlgebra
 using Test
 using Random
-using DIVAnd
+#using DIVAnd
 using DataAssim
 
 function check(ℳ::AbstractModel,n,t = 0,ϵ = 1e-5)

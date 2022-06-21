@@ -13,3 +13,18 @@ end
 
 GaussianSqrt(g::Gaussian) = GaussianSqrt(g.mean,cholesky(g.covar).U)
 rand(g::Gaussian) = rand(GaussianSqrt(g))
+
+
+
+struct VectorFun{T,F} <: AbstractVector{T}
+    len::Int
+    fun::F
+end
+
+import Base: size, getindex
+
+Base.size(v::VectorFun) = (v.len,)
+Base.getindex(v::VectorFun,n::Integer) = v.fun(n)
+
+
+VectorFun(T,len,fun) = VectorFun{T,typeof(fun)}(len,fun)
