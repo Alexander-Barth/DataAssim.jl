@@ -31,7 +31,8 @@ where ⋅ is the inner product.
 
 The same API should also be implemented for the observation 𝓗 where 𝓗``(n,x)`` represents the observed part of the state vector (for 4D-Var).
 Note that for the Kalman Filter method the adjoint (of the model or the observation operator) is not needed.
-For the ensemble analysis methods, only the application of the observations operator to every ensemble member is needed.
+
+For the ensemble analysis methods, only the application of the model and observations operator to every ensemble member is needed.
 
 ```@docs
 FreeRun
