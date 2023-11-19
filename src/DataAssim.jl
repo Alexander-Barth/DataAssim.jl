@@ -18,6 +18,7 @@ include("ensemble.jl")
 include("fourDVar.jl")
 include("KalmanFilter.jl")
 include("TwinExperiment.jl")
+include("diagnostic.jl")
 
 export FreeRun, fourDVar, TwinExperiment, LinShallowWater1DModel, KalmanFilter
 export AbstractModel, ModelFun
