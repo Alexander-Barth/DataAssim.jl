@@ -83,11 +83,11 @@ end
             outerloops = 2,
             tol = 1e-5)
 
-Incremental 4D-Var with the model `ℳ` and `nmax` time-steps starting at the
+Incremental 4D-Var with the model `ℳ` (`AbstractModel`) and `nmax` time-steps starting at the
 initial condition `xi` and error covariance `Pi` with the specified numbers of inner
 and outer loops.
-Observations `yo` (and error covariance `R`) at the time steps given in `no` are
-assimilated with the observation operator `H`.
+Observations `yo` (vector of vectors) and error covariance `R` (vector of matrices) at the time steps given in `no` are
+assimilated with the observation operator `H` (`AbstractModel`).
 """
 function fourDVar(
     xi::AbstractVector,Pi,ℳ,yo::AbstractVector,R::AbstractVector,𝓗,nmax,no;
