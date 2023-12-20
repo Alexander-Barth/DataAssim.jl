@@ -8,7 +8,7 @@ using DataAssim: talagrand_diagram
 # https://collaboration.cmc.ec.gc.ca/cmc/cmoi/product_guide/docs/lib/ens_en.pdf
 # https://web.archive.org/web/20231118202650/https://collaboration.cmc.ec.gc.ca/cmc/cmoi/product_guide/docs/lib/ens_en.pdf
 
-x = [1.5;; 2.3;; 0.8;; 4.1;; 0.3]
+x = [1.5, 2.3, 0.8, 4.1, 0.3]'
 y = [2.95]
 
 
