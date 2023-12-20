@@ -13,4 +13,4 @@ y = [2.95]
 
 
 freq = talagrand_diagram(x,y)
-@test nbins == [0,0,0,0,1,0]
+@test freq == [0,0,0,0,1,0]
