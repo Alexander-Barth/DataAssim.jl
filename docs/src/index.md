@@ -73,4 +73,5 @@ Lorenz63Model
 
 ```@docs
 compact_locfun
+DataAssim.talagrand_diagram
 ```

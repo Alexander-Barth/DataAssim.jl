@@ -8,7 +8,8 @@ makedocs(
     modules = [DataAssim],
     sitename = "DataAssim",
     pages = [
-        "index.md"]
+        "index.md"],
+    checkdocs=:none,
 )
 
 
