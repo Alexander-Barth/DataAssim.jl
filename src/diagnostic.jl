@@ -28,7 +28,7 @@ the obervations (sample).
 ## Example
 
 ```julia
-using PyPlot
+using PyPlot, DataAssim
 Nens = 100
 Nsample = 10000
 # Ensemble
@@ -36,7 +36,7 @@ x = randn(Nsample,Nens)
 # Observation
 y = randn(Nsample)
 
-freq = talagrand_diagram(x,y)
+freq = DataAssim.talagrand_diagram(x,y)
 plot(freq)
 plot(ones(size(freq)) / size(freq,1))
 ylim(0,ylim()[2])
