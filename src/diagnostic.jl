@@ -25,6 +25,11 @@ Compute the frequency of each bins for a Talagrand Diagram where
 `x` is the ensemble (array of the size sample × ensemble size) and `y` are
 the obervations (sample).
 
+A U-shaped diagram means that the ensemble spread is too small and that
+too many observations fall outside the extremes of the ensemble while a ∩-shaped
+diagram mean the spread too larage and too many observations falling near the
+center of the ensemble.
+
 ## Example
 
 ```julia
