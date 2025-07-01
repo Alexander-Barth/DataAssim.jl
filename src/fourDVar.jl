@@ -1,5 +1,19 @@
 # nmax: total number of integration of the model
 # x of size n x (nmax+1)
+"""
+    FreeRun!(ℳ, xi, Q, 𝓗, nmax, no, x, Hx)
+
+Performs forward integration of the model `ℳ` starting from initial state `xi` up to time step `nmax`.
+
+- `x[:,n] = ℳ(n, x[:,n])` is the state estimated by the model at time n.
+- `𝓗(obsindex, x)` mapping.
+- `nmax` is total number of integration of the model 
+- `no` is a vector of time indices where observations exist.
+- `x` is the matrix to store the state trajectory.
+- `Hx` is the vector to store the simulated observations at times `no`.
+
+Modifies `x` and `Hx` in place.
+"""
 
 function FreeRun!(ℳ,xi,Q,𝓗::AbstractModel,nmax,no,x,Hx)
     obsindex = 1;
@@ -34,9 +48,27 @@ function FreeRun(ℳ,xi,Q,𝓗,nmax,no)
     return x,Hx
 end
 
+"""
+    J = costfun(xi, Pi, ℳ, xa, yo, R, 𝓗, nmax, no, x, Hx)
 
+Computes the 4D-Var cost function:
+
+    J = (xa - xi)' * Pi⁻¹ * (xa - xi) + Σ (yo[i] - 𝓗(x[no[i]]))' * R[i]⁻¹ * (yo[i] - 𝓗(x[no[i]]))
+
+Arguments:
+- `xi`: background state (initial state)
+- `Pi`: background error covariance
+- `xa`: current state estimate
+- `yo`: list of observations
+- `R`: list of observation error covariance matrices
+- `𝓗`: observation operator (Maping from state space to observation space)
+- `x`, `Hx`: temporary storage for model trajectory and simulated observations
+
+Returns:
+- `J`: scalar cost function value
+"""
 function costfun(xi,Pi,ℳ,xa,yo,R,𝓗,nmax,no,x,Hx)
-    FreeRun!(ℳ,xa,[],𝓗,nmax,no,x,Hx);
+    FreeRun!(ℳ,xi,[],𝓗,nmax,no,x,Hx);
 
     # cost function
     tmp = x[:,1] - xa;
@@ -91,8 +123,8 @@ assimilated with the observation operator `H` (`AbstractModel`).
 """
 function fourDVar(
     xi::AbstractVector,Pi,ℳ,yo::AbstractVector,R::AbstractVector,𝓗,nmax,no;
-    innerloops = 10,
-    outerloops = 2,
+    innerloops = 100,
+    outerloops = 3,
     tol = 1e-5)
 
     xa = float(xi)
@@ -141,7 +173,7 @@ function fourDVar(
                 return value
             end
         end
-
+        print(Optim.only_fg!(fg!))
         result = Optim.optimize(Optim.only_fg!(fg!), zeros(size(b)), ConjugateGradient(),
                                 Optim.Options(g_tol = tol,
                                               iterations = innerloops,

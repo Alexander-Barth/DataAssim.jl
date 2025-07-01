@@ -29,21 +29,6 @@ if method == "4DVar"
   xa,ya = FreeRun(ℳ,xia,Q,H,nmax,no);
   Pa = [];
   diag[:J] = J;
-  #diag[:Jfun] = Jfun;
-elseif method == "KF"
-  xa,Pa = KalmanFilter(xi,Pi,ℳ,Q,yo,R,H,nmax,no);
-  diag[:Pa] = Pa;
-# elseif strcmp(method,"ETKF") || strcmp(method,"CLEnKF") || ...
-#       strmatch("sangoma-",method) == 1
-#   Ei = repmat(xi,[1 Nens]) + cholesky(Pi).U * randn(n,Nens);
-#   [E] = ETKF_mod(Ei,model,Q,yo,R,H,nmax,no,method);
-#   xa = permute(mean(E,2),[1 3 2]);
-#   diag.E = E;
-# elseif strcmp(method,"KPF")
-#   Ei = repmat(xi,[1 Nens]) + cholesky(Pi).U * randn(n,Nens);
-#   [E] = kpf(Ei,model,Q,yo,R,H,nmax,no,method);
-#   xa = permute(mean(E,2),[1 3 2]);
-#   diag.E = E;
 else
   error("unkown method: $(method)");
 end
