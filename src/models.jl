@@ -48,5 +48,4 @@ adj(M::ModelFun,t,x,dx::AbstractVector) = M.adj(t,x,dx)
 
 export tgl, adj
 
-include("lorenz63model.jl")
 include("shallow_water1D_model.jl")

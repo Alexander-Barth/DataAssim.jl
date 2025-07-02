@@ -14,16 +14,13 @@ using Optim
 
 include("types.jl")
 include("models.jl")
-include("ensemble.jl")
 include("fourDVar.jl")
-include("KalmanFilter.jl")
 include("TwinExperiment.jl")
 include("diagnostic.jl")
 
-export FreeRun, fourDVar, TwinExperiment, LinShallowWater1DModel, KalmanFilter
+export FreeRun, fourDVar, TwinExperiment, LinShallowWater1DModel
 export AbstractModel, ModelFun
 export pack, unpack
-export Lorenz63Model
 export ModelMatrix
 export compact_locfun
 

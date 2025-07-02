@@ -1,5 +1,5 @@
 function TwinExperiment(ℳ,xit,Pi,Q,R,H,nmax,
-                        no,method; Nens = 100)
+                        no,method)
 
 
 n = length(xit);

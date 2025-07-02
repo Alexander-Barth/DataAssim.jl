@@ -7,18 +7,10 @@
 [![documentation dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://alexander-barth.github.io/DataAssim.jl/dev/)
 
 
-The packages implements various data assimilation methods:
+The packages implements data assimilation methods:
 
 * (Extended) Kalman Filter
 * Incremental 4D-Var
-* Ensemble Square Root Filter (EnSRF)
-* Ensemble Square Root Filter with serial processing of the observations (serialEnSRF)
-* Ensemble Transform Kalman Filter (ETKF)
-* Ensemble Transform Kalman Filter (EAKF)
-* Singular Evolutive Interpolated Kalman ﬁlter (SEIK)
-* Error-subspace Transform Kalman Filter (ESTKF)
-* Ensemble Kalman Filter (EnKF)
-
 The Julia code is ported from the Matlab/Octave code generated in the frame of the Sangoma project (http://data-assimilation.net/).
 
 
@@ -26,20 +18,6 @@ The Julia code is ported from the Matlab/Octave code generated in the frame of t
 ## Example
 
 An example of using to package is available as a [jupyter-notebook](https://nbviewer.jupyter.org/github/Alexander-Barth/DataAssim.jl/blob/master/examples/example.ipynb).
-
-
-
-### Kalman Filter
-
-The example below is the result of the Kalman Filter. The red elipse corresponds to the model forecast (Gaussian probability density function), the blue elipse corresponds to the observations and the purple elipse is the analysis (after assimilation).
-
-https://user-images.githubusercontent.com/9881475/161507401-c40525b1-7ffb-4297-8838-6abab1bca330.mp4
-
-### Ensemble Transform Kalman Filter
-
-The example below is the result of the Ensemble Transform Kalman Filter. The red dots corresponds to the model ensemble, the blue elipse is the Gaussian probability density function of the observations and the purple dots is the model ensemble after analysis.
-
-https://user-images.githubusercontent.com/9881475/158639340-fe7ae9d7-20ee-4c73-9f02-ade9b89685fa.mp4
 
 
 ## Reference
