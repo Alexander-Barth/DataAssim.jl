@@ -7,21 +7,7 @@
 [![documentation dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://alexander-barth.github.io/DataAssim.jl/dev/)
 
 
-The packages implements data assimilation methods:
-
-* (Extended) Kalman Filter
+The packages implements data assimilation method:
 * Incremental 4D-Var
-The Julia code is ported from the Matlab/Octave code generated in the frame of the Sangoma project (http://data-assimilation.net/).
 
 
-
-## Example
-
-An example of using to package is available as a [jupyter-notebook](https://nbviewer.jupyter.org/github/Alexander-Barth/DataAssim.jl/blob/master/examples/example.ipynb).
-
-
-## Reference
-
-Most of the algorithms are described in the review article:
-
-Sanita Vetra-Carvalho, Peter Jan van Leeuwen, Lars Nerger, Alexander Barth, M. Umer Altaf, Pierre Brasseur, Paul Kirchgessner, and Jean-Marie Beckers. State-of-the-art stochastic data assimilation methods for high-dimensional non-Gaussian problems. Tellus A: Dynamic Meteorology and Oceanography, 70(1):1445364, 2018. doi: [10.1080/16000870.2018.1445364](https://doi.org/10.1080/16000870.2018.1445364).

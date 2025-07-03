@@ -214,17 +214,17 @@ function fourDVar(
         Jacob(dx) = Jacobien(xi,dx,x,Pi,ℳ,R,𝓗,nmax,no)
         AdjJacob(dx) = Adj_Jacobien(xi,dx,x,Pi,ℳ,R,𝓗,nmax,no)
 
-        #function A_mul!(y, dx)
-        #    y .= grad(dx) - b
-        #    y
-        #end
-
         function A_mul!(y, dx)
-            JJ = zeros(eltype(Jacob(dx)))
-            JJ = Jacob(dx)
-            y .= AdjJacob(JJ)
+            y .= grad(dx) - b
             y
         end
+
+        #function A_mul!(y, dx)
+        #    JJ = zeros(eltype(Jacob(dx)))
+        #    JJ = Jacob(dx)
+        #    y .= AdjJacob(JJ)
+        #    y
+        #end
         
         Hess = LinearOperators.LinearOperator(Float64, length(b), length(b), true, false, A_mul!)
         
