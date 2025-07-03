@@ -1,5 +1,4 @@
-# nmax: total number of integration of the model
-# x of size n x (nmax+1)
+
 """
     FreeRun!(ℳ, xi, Q, 𝓗, nmax, no, x, Hx)
 
@@ -69,7 +68,6 @@ Returns:
 """
 function costfun(xi,Pi,ℳ,xa,yo,R,𝓗,nmax,no,x,Hx)
     FreeRun!(ℳ,xi,[],𝓗,nmax,no,x,Hx);
-
     # cost function
     tmp = x[:,1] - xa;
     J = tmp' * (Pi \ tmp);
@@ -77,7 +75,6 @@ function costfun(xi,Pi,ℳ,xa,yo,R,𝓗,nmax,no,x,Hx)
         tmp = yo[i] - Hx[i];
         J = J + tmp' * (R[i] \ tmp);
     end
-
     return J
 end
 
@@ -108,6 +105,77 @@ function gradient(xi,dx0,x,Pi,ℳ,yo,R,𝓗,nmax,no)
     return grad,lambda
 end
 
+function Jacobien(xi,dx,x,Pi,ℳ,R,𝓗,nmax,no)
+    Jac = []
+    obsindex = length(no)
+    push!(Jac, cholesky(Pi).U \ dx)
+    for n=nmax+1:-1:1
+        if obsindex > 0 && n == no[obsindex]
+            push!(Jac, cholesky(R[obsindex]).U \ tgl(𝓗,n,x[:,n], tgl(ℳ,n,x[:,n],dx)))
+            obsindex = obsindex - 1;
+        end
+    end
+    result = vcat(Jac...)
+    return result
+end
+
+function Adj_Jacobien(xi,dx,x,Pi,ℳ,R,𝓗,nmax,no)
+    Jac = zeros(size(xi,1))
+    obsindex = length(no)
+    index = size(Pi,1)
+    Jac = (cholesky(Pi).U)' \ dx[1:index]
+    for n=nmax+1:-1:1
+        if obsindex > 0 && n == no[obsindex]
+            m = size(R[obsindex],1)
+            Jac += adj(ℳ,n,x[:,n], adj(𝓗,n,x[:,n],(cholesky(R[obsindex]).U)' \ dx[index+1:index+m]))
+            index +=m 
+            obsindex = obsindex - 1;
+        end
+    end 
+    return Jac
+end
+
+
+
+"""
+    compute_eigenvalues(A_mul!, n)
+
+Calcule et affiche la matrice et les valeurs propres de l'opérateur défini
+par `A_mul!` de dimension `n`.
+
+Arguments:
+- `A_mul!`: fonction mutating telle que A_mul!(y, x) = A*x
+- `n`: dimension de l'opérateur
+"""
+function compute_eigenvalues(A_mul!, n)
+    # Initialiser la matrice pleine
+    A = zeros(n, n)
+    
+    # Vecteurs de travail
+    x = zeros(n)
+    y = zeros(n)
+    
+    # Construire chaque colonne en appliquant A_mul! aux vecteurs canoniques
+    for j in 1:n
+        x .= 0.0
+        x[j] = 1.0
+        A_mul!(y, x)
+        A[:, j] .= y
+    end
+    
+    # Affichage de A
+    display(A)
+    println(A == diag(A))
+
+    # Calcul des valeurs propres
+    eigvals = eigen(A).values
+    display(eigvals)
+    # Graphe des valeurs propres
+    #p = Plots.plot(eigvals)
+    #Plots.display(p)
+
+end
+
 """
     x,J = fourDVar(
             xi,Pi,ℳ,yo,R,H,nmax,no;
@@ -123,9 +191,8 @@ assimilated with the observation operator `H` (`AbstractModel`).
 """
 function fourDVar(
     xi::AbstractVector,Pi,ℳ,yo::AbstractVector,R::AbstractVector,𝓗,nmax,no;
-    innerloops = 100,
-    outerloops = 3,
-    tol = 1e-5)
+    outerloops = 1,
+    tol = 1e-8)
 
     xa = float(xi)
     T = eltype(xa)
@@ -144,59 +211,53 @@ function fourDVar(
         grad(dx) = gradient(xi,dx,x,Pi,ℳ,yo,R,𝓗,nmax,no)[1];
         b .= grad(zeros(size(xi)));
 
-        #=
-        function fun(dx,fdx)
-            #@show "D"
-            fdx[:] = b - grad(dx)
+        Jacob(dx) = Jacobien(xi,dx,x,Pi,ℳ,R,𝓗,nmax,no)
+        AdjJacob(dx) = Adj_Jacobien(xi,dx,x,Pi,ℳ,R,𝓗,nmax,no)
+
+        #function A_mul!(y, dx)
+        #    y .= grad(dx) - b
+        #    y
+        #end
+
+        function A_mul!(y, dx)
+            JJ = zeros(eltype(Jacob(dx)))
+            JJ = Jacob(dx)
+            y .= AdjJacob(JJ)
+            y
+        end
+        
+        Hess = LinearOperators.LinearOperator(Float64, length(b), length(b), true, false, A_mul!)
+        
+        
+        global Aerrors = [] 
+
+        function A_error(workspace::KrylovWorkspace, Hess,b)
+                error = zeros(length(b))
+                (xast,_) = Krylov.cg(Hess, -b)
+                error = xast - workspace.x
+                mul!(error, Hess, error)
+                error = error'*(xast - workspace.x)
+                push!(Aerrors, error)
+            return false
         end
 
-        dxa,cgsuccess,niter = DIVAnd.conjugategradient(fun,b,tol=tol/norm(b),maxit=innerloops,x0=zeros(size(xi)))
-        @debug begin
-            tmp = zeros(size(xi))
-            fun(dxa,tmp)
-            tmp = tmp - b
+        cg_callback(workspace) = A_error(workspace, Hess,b)
 
-            @show "DIVAnd.conjugategradient",sum(tmp.^2),niter
-        end
-        =#
 
-        function fg!(F,G,x)
-            @debug "call fg! $(F==nothing) $(G==nothing)"
-            GG = grad(x)
-            if G != nothing
-                # code to compute gradient here
-                # writing the result to the vector G
-                G .= GG
-            end
-            if F != nothing
-                value = 0.5 * (x ⋅ GG) + 0.5 * b ⋅ x
-                return value
-            end
-        end
-        print(Optim.only_fg!(fg!))
-        result = Optim.optimize(Optim.only_fg!(fg!), zeros(size(b)), ConjugateGradient(),
-                                Optim.Options(g_tol = tol,
-                                              iterations = innerloops,
-                                              allow_f_increases=true,
-                                              store_trace = true,
-                                              show_trace = false))
-        dxa = result.minimizer
 
-        @debug begin
-            @show summary(result)
-            tmp = zeros(size(xi))
-            fg!(nothing,tmp,dxa)
-            @show tmp
-
-            @show innerloops
-            @show Optim.g_converged(result)
-            @show Optim.f_converged(result)
-            @show "optim",sum(tmp.^2),Optim.iterations(result)
-        end
-
+        
+        
+        (dxa, stats) = Krylov.cg(Hess, -b, 
+                atol=tol, rtol=tol, 
+                history=true, 
+                callback = cg_callback
+                )
         # add increment to dxa
         xa .= xa + dxa;
+
+        
+        compute_eigenvalues(A_mul!, length(b))
     end
 
-    return xa,J#,Jfun
+    return xa,J,Aerrors
 end

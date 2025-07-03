@@ -7,11 +7,13 @@ module DataAssim
 using Test
 using LinearAlgebra
 using Printf
+using Plots
 using Statistics
 #using DIVAnd
 #import DIVAnd: pack, unpack
 using Optim
-
+using Krylov
+using LinearOperators
 include("types.jl")
 include("models.jl")
 include("fourDVar.jl")

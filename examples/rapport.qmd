@@ -1,0 +1,95 @@
+---
+title: "Rapport de laboratoire 3"
+subtitle: "MTH8211"
+author:
+  - name: Oussama Mouhtal, Yasmine Amami
+    email: oussama-2.mouhtal@polymtl.ca , yasmine.amami@polymtl.ca
+    affiliation:
+      - name: Polytechnique Montréal
+format:
+  pdf:
+    keep-tex: false
+    documentclass: article
+    include-in-header:
+      - text: |
+            \usepackage{xspace}
+            \usepackage[francais]{babel}
+    geometry:
+      - margin=1in
+    papersize: letter
+    colorlinks: true
+    urlcolor: blue
+engine: julia
+---
+
+```{julia}
+#| output: false
+using DataAssim
+using LinearAlgebra
+using Plots
+using Random
+using Test
+```
+
+# Description du projet   
+
+## Assimilation de données 
+
+L'assimilation de données consiste à ajuster une modèle physique dépendant d'un paramètre souvent l'estimation initiale par les données et des informations a priori sur le problème, mathématiquement, on cherche à trouver le paramètre du modèle physqique en minimisant l'écart entre le modèle et les observation tout en tenant compte de l'information à priori :  
+
+\begin{equation}
+\label{Prob:nonlinear}
+\min_{x_0 \in \mathbb{R}^n}  f(x_0) = \min_{x_0 \in \mathbb{R}^n} \frac{1}{2} \|x_0 - x_b\|_{B^{-1}}^2 + \frac{1}{2} \sum_{{t_i} \in \mathcal{T}} \|y_i - \mathcal{H}_i(\mathcal{M}_{t_0, t_i}(x_0))\|_{R_i^{-1}}^2.
+\end{equation}
+
+Ici, $x_0 = x(t_0)$ est l'état au temps initial $t_0$, par exemple la valeur de la température, $x_b \in \mathbb{R}^{n}$ représente les informations a priori au temps $t_0$ et $y_i \in \mathbb{R}^{m_i}$ est le vecteur d'observation au temps $t_i$ pour $t_i \in \mathcal{T}$ avec $\mathcal{T}$ représente l'ensemble des instants où les observations sont collectés. $\mathcal{M}_{t_0, t_i}(\cdot)$ est un modèle dynamique physique non linéaire qui propage l'état $x_0$ au temps $x_0$ vers l'état $x_i$ au temps $t_i$ en résolvant les équations aux dérivées partielles. 
+$\mathcal{H}_i(\cdot)$ transforme le vecteur d'état $x_i$ en un vecteur de dimension $m_i$ représentant l'état dans l'espace d'observation.
+$B \in \mathbb{R}^{n \times n}$, $R_i \in \mathbb{R}^{m_i \times m_i}$ sont des matrices symétriques définies positives de covariance d'erreur correspondant aux erreurs du modèle a priori et des observations, respectivement. 
+
+## Modèle utilisé 
+
+Le modèle que nous utilisons est "Shallow Water 1D". Ce modèle repose sur deux variables principales : la hauteur de la surface de l'eau $\zeta$ et la vitesse de l'eau $u$, avec les équations linéarisées.
+
+Les équations discrétisées sont les suivantes :
+
+1. Mise à jour de la hauteur de la surface de l'eau $\zeta_i$ :
+$$
+\zeta_i^{(new)} = \zeta_i - \frac{\text{dt} \cdot h}{x_u[i+1] - x_u[i]} (u[i+1] - u[i])
+$$
+Où $\text{dt}$ est le pas de temps, $h$ est la profondeur de l'eau, et $x_u$ est l'espace discret pour les vitesses de l'eau.
+
+2. Mise à jour de la vitesse de l'eau $u_i$ :
+$$
+u_i^{(new)} = u_i - \frac{\text{dt} \cdot g}{x_r[i] - x_r[i-1]} (\zeta_i - \zeta_{i-1})
+$$
+Où $g$ est la constante gravitationnelle et $x_r$ est l'espace discret pour les hauteurs de l'eau.
+
+Finalement, le modèle $M$ utilisé est linéaire tel que la matrice est creuse, tel que :
+$$
+\mathcal{M}_{t_0, t_i}(x_0) = \mathcal{M}(\mathcal{M}(\ldots \mathcal{M}(x_0)))
+$$
+avec $x = [\zeta, u]$.
+
+## Opérateur d'observation
+
+L'opérateur d'observation utilisé ici consiste à extraire les $m_i$ premier élément du vecteur d'état $\mathcal{M}_{t_0, t_i}(x_0)$ à l'instant $t_i$, qui est une opération linéaire.
+
+## Génération des observations
+
+Le modèle est exécuté avec les conditions initiales exactes $xit$, et les observations réelles $y_i$ sont générées par l'opérateur d'observation $\mathcal{H}$ tel que:
+$$
+y_i = H \mathcal{M}_{t_0, t_i}(xt)  + \epsilon_{\text{obs}}
+$$
+
+où $\epsilon_{\text{obs}} \sim \mathcal{N}(0, R_i)$ est un bruit d'observation. Dans ce projet les matrice $R_i = \sigma I_{m_i}$, et $m_i = m.
+
+
+## Information a priori (background)
+
+En assimilation de données, l'information a priori correspons au vecteur d'état du sytème prédit par l'ancien modèle à l'instant $t_0$,l'information à priori $x_b$ est généré tel que:
+
+$$
+x_b = xit + \epsilon_{\text{b}}
+$$
+
+où $\epsilon_{\text{b}} \sim \mathcal{N}(0, B)$ est un bruit. Dans ce projet les matrice $B = \sigma I_{n}$.

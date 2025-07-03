@@ -25,7 +25,7 @@ xfree,yfree = FreeRun(ℳ,xi,Q,H,nmax,no);
 # assimilation
 
 if method == "4DVar"
-  xia,J = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no,outerloops = 10);
+  xia,J,Aerrors = fourDVar(xi,Pi,ℳ,yo,R,H,nmax,no,outerloops = 1);
   xa,ya = FreeRun(ℳ,xia,Q,H,nmax,no);
   Pa = [];
   diag[:J] = J;
@@ -34,7 +34,7 @@ else
 end
 
 
-return xt,xfree,xa,yt,yo,diag
+return xt,xfree,xa,yt,yo,diag,Aerrors
 
 end
 
