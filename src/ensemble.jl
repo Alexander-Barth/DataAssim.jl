@@ -42,11 +42,11 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 
             xf = mean(Xf,dims = 2)[:,1]
             #Xfp = Xf - repeat(xf, inner = (1,N))
-            Xfp = Xf .- xf[:,1:1]
+            Xfp = Xf .- @view xf[:,1:1]
 
             Hxf = mean(HXf, dims = 2)[:,1]
             #S = HXf - repeat(Hxf, inner = (1,N))
-            S = HXf .- Hxf[:,1:1]
+            S = HXf .- @view Hxf[:,1:1]
 
             F = S*S' + (N-1) * R
 
@@ -111,8 +111,8 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 Sigma_T = Diagonal(Sigma_T)
 
                 if size(Sigma_T,2) > N
-                    Sigma_T = Sigma_T(:,1:N)
-                    V_T = V_T(:,1:N)
+                    Sigma_T = Sigma_T[:,1:N]
+                    V_T = V_T[:,1:N]
                 end
                 Ndim = size(Sigma_T,1)
 
