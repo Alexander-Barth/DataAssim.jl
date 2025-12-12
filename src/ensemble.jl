@@ -101,6 +101,8 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                     xf = xa
                 end
             elseif $method == ETKF
+                @assert N <= m
+
                 # ETKF with decomposition of Stilde
                 sqrtR = sqrt(R)
                 Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
@@ -202,6 +204,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 #   xa = xf + L * (U_T * (inv(Sigma_T) * U_T' * (HL' * (R \ (y - Hxf)))))
 
             elseif $method == EAKF
+                @assert N <= m
                 # EAKF
                 sqrtR = sqrt(R)
 
@@ -253,6 +256,7 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                                                        (Sigma_A * V_A' * (sqrtR \ (y - Hxf)))))
 
             elseif $method == SEIK
+                @assert N <= m
                 # SEIK
 
                 A = [I; zeros(N-1)']
