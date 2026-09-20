@@ -101,8 +101,6 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                     xf = xa
                 end
             elseif $method == ETKF
-                @assert N <= m
-
                 # ETKF with decomposition of Stilde
                 sqrtR = sqrt(R)
                 Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
@@ -121,7 +119,9 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
 
                 if debug
                     # ETKF-TTt
-                    @test TTt ≈ U_T * ((I + Sigma_T*Sigma_T') \ U_T')
+                    if N <= m
+                        @test TTt ≈ U_T * ((I + Sigma_T*Sigma_T') \ U_T')
+                    end
 
                     K2 = 1/sqrt(N-1) * Xfp *
                         (Stilde' * ((Stilde*Stilde'+ I) \ inv(sqrtR)))
