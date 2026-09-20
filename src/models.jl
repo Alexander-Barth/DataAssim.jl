@@ -32,8 +32,12 @@ adj(M::ModelMatrix,t,x,dx::AbstractVecOrMat) = M.M'*dx
 """
     ℳ = ModelFun(nonlinear_forecast,tangent_linear_model,adjoint_model)
 
-Model defined by the functions `nonlinear_forecast`,`tangent_linear_model` and 
+Model defined by the functions `nonlinear_forecast`,`tangent_linear_model` and
 `adjoint_model`.
+
+For an ensemble scheme the tangent linear or adjoint model is not used. In this
+case, one can provide a dummy function to `ModelFun` as they will never be
+called.
 """
 struct ModelFun{F,F2,F3} <: AbstractModel
     forecast::F
