@@ -108,8 +108,8 @@ Sangoma D3.1 http://data-assimilation.net/Documents/sangomaDL3.1.pdf
                 Stilde = sqrt(1/(N-1)) * (sqrtR \ S)
 
                 # "economy size" SVD decomposition
-                #U_T,Sigma_T,V_T = svd(Stilde')
-                U_T,Sigma_T,V_T = svd(copy(Stilde'))
+                U_T,Sigma_T,V_T = svd(Stilde')
+                #U_T,Sigma_T,V_T = svd(copy(Stilde'))
                 Sigma_T = Diagonal(Sigma_T)
 
                 if size(Sigma_T,2) > N
