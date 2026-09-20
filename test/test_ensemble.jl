@@ -1,3 +1,8 @@
+import DataAssim
+using Test
+using LinearAlgebra
+using Statistics
+
 @testset "Ensemble methods" begin
 
     # number of elements in the state vector
