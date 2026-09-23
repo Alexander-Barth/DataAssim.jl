@@ -381,12 +381,12 @@ observation `y` using the local $($method).
   returns a vector of weights (m x 1).
   For example:
 ```
-     selectObs(i) = exp(- ((x[i] - xobs[:]).^2 + (y[i] - yobs[:]).^2)/L^2 );
+     selectObs(i) = exp.(- ((x[i] .- xobs[:]).^2 + (y[i] .- yobs[:]).^2)/L^2 );
 ```
   or
 ```
-     selectObs(i) = compact_locfun(L,
-         sqrt((x[i] - xobs[:]).^2 + (y[i] - yobs[:]).^2));
+     selectObs(i) = compact_locfun.(
+         sqrt((x[i] .- xobs[:]).^2 + (y[i] .- yobs[:]).^2)/L);
 ```
 
 where `x` and `y` is the horizontal model grid, `xobs` and `yobs` are the
